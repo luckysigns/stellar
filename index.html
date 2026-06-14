@@ -62,6 +62,13 @@
   .lucky .why{font-size:14px;color:var(--star)}
   .lucky .why small{display:block;color:var(--dim);font-size:12px;margin-top:2px}
   .lucky .star{color:var(--gold);letter-spacing:1px;font-size:12px}
+  .win .peak{display:block;color:var(--teal);font-size:11px;font-weight:600;margin-top:2px;letter-spacing:0}
+  .lucky-day{cursor:pointer;border-radius:10px;transition:background .15s}
+  .lucky-day:hover{background:rgba(255,255,255,.03)}
+  .day-times{padding:4px 0 4px 12px;border-left:2px solid var(--line);margin:0 0 8px 4px}
+  .daycell.tappable{cursor:pointer}
+  .daycell.tappable:hover{background:rgba(255,255,255,.05)}
+  .daycell.sel{outline:2px solid var(--gold);outline-offset:-2px}
   .ev{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;line-height:1.5}
   .ev:last-child{border:none}
   .ev-icon{font-family:"SF Mono",monospace;font-size:15px;flex:0 0 22px;text-align:center}
@@ -251,7 +258,11 @@
           <span><i class="sw" style="outline:1.5px solid var(--teal);background:transparent"></i> today</span>
         </div>
         <div class="monthnote" id="month-note"></div></div>
-      <div class="between"><span class="label">Why these days</span></div>
+      <div id="daypick" class="hide">
+        <div class="between"><span class="label" id="daypick-title">Pick a day</span></div>
+        <div class="card"><div id="daypick-body"></div></div>
+      </div>
+      <div class="between"><span class="label">Best days & times this month</span></div>
       <div class="card"><div id="month-why"></div></div>
     </div>
   </section>
@@ -562,19 +573,36 @@ function renderSkyNow(){
 
 function aspectFlavor(h){const tr=h.transiting,na=h.natal,a=h.aspect.name;const benefic=PLANET_LUCK[tr]>0||PLANET_LUCK[na]>0;if(na==="MC"&&(tr==="Jupiter"||tr==="Venus"))return tr==="Jupiter"?"Jupiter blesses your Midheaven — a window for visibility, opportunity, and inspired moves toward your calling.":"Venus graces your Midheaven — favor, beauty, and good will flow toward your public life and work.";if(na==="MC")return "Energy gathered at your Midheaven — your direction and public path are activated.";if(na==="Venus"&&(tr==="Jupiter"||tr==="Venus"))return "A transit lights up your natal Venus at the top of your chart — your signature placement for grace, attraction, and career luck is switched on.";if(tr==="Venus"||na==="Venus")return "Warmth for connection, money, and asking for what you want.";if(tr==="Jupiter"||na==="Jupiter")return "An expansive, door-opening window — say yes, reach higher.";if(tr==="Sun")return "Confidence and visibility are with you; put yourself forward.";if(tr==="Mercury")return "Sharp thinking and clean communication — pitch, write, decide.";if(a==="trine")return "Things flow with little resistance; act on the easy thread.";if(a==="sextile")return "A small opening you step toward — initiate.";return benefic?"A supportive pocket of the day.":"A workable, steady window.";}
 
-function computeLuckyWindows(refDate){
+/* compute lucky time-windows for ANY day; returns array of {time,end,peak,score,hits} */
+function luckyWindowsForDay(refDate,maxWindows){
   const start=new Date(refDate);start.setHours(0,0,0,0);
   const samples=[];
-  for(let m=0;m<24*60;m+=30){const d=new Date(start.getTime()+m*60000);samples.push({t:d,score:mcLuckScore(cachedAngles,d).score});}
+  for(let m=0;m<24*60;m+=15){const d=new Date(start.getTime()+m*60000);samples.push({t:d,score:mcLuckScore(cachedAngles,d).score});}
   const mean=samples.reduce((a,b)=>a+b.score,0)/samples.length;
   const peaks=[];
-  for(let i=1;i<samples.length-1;i++){if(samples[i].score>=samples[i-1].score&&samples[i].score>=samples[i+1].score&&samples[i].score>mean+0.3)peaks.push(samples[i]);}
+  for(let i=1;i<samples.length-1;i++){if(samples[i].score>=samples[i-1].score&&samples[i].score>=samples[i+1].score&&samples[i].score>mean+0.25)peaks.push(samples[i]);}
   peaks.sort((a,b)=>b.score-a.score);
-  const chosen=[];for(const p of peaks){if(chosen.every(c=>Math.abs(c.t-p.t)>90*60000))chosen.push(p);if(chosen.length>=3)break;}
+  const chosen=[];for(const p of peaks){if(chosen.every(c=>Math.abs(c.t-p.t)>75*60000))chosen.push(p);if(chosen.length>=(maxWindows||4))break;}
   chosen.sort((a,b)=>a.t-b.t);
-  if(!chosen.length){$("lucky-list").innerHTML=`<div class="dim" style="font-size:14px">No standout windows today — the energy's even. Move with your own rhythm.</div>`;luckyWindowsForPrompt=[];return;}
-  luckyWindowsForPrompt=chosen.map(c=>{const hits=mcLuckScore(cachedAngles,c.t).hits.filter(h=>h.aspect.luck>0).slice(0,2);return{time:c.t,score:c.score,hits};});
-  $("lucky-list").innerHTML=luckyWindowsForPrompt.map(w=>{const end=new Date(w.time.getTime()+90*60000);const stars="★".repeat(Math.min(3,Math.max(1,Math.round(w.score/3))));const why=w.hits.length?w.hits.map(h=>`${h.transiting} ${h.aspect.name} ${h.natal}`).join(" + "):"harmonious sky";const flavor=w.hits.length?aspectFlavor(w.hits[0]):"A naturally easy stretch.";return `<div class="lucky"><div class="win">${fmtRange(w.time,end)}</div><div class="why">${flavor}<small>${why} · <span class="star">${stars}</span></small></div></div>`;}).join("");
+  return chosen.map(c=>{
+    // window = ±45min around the peak; peak is the exact best minute
+    const time=new Date(c.t.getTime()-45*60000),end=new Date(c.t.getTime()+45*60000);
+    const hits=mcLuckScore(cachedAngles,c.t).hits.filter(h=>h.aspect.luck>0).slice(0,2);
+    return {time,end,peak:c.t,score:c.score,hits};
+  });
+}
+function computeLuckyWindows(refDate){
+  const wins=luckyWindowsForDay(refDate,4);
+  if(!wins.length){$("lucky-list").innerHTML=`<div class="dim" style="font-size:14px">No standout windows today — the energy's even. Move with your own rhythm.</div>`;luckyWindowsForPrompt=[];return;}
+  luckyWindowsForPrompt=wins;
+  $("lucky-list").innerHTML=wins.map(w=>luckyRowHtml(w)).join("");
+}
+function luckyRowHtml(w){
+  const stars="★".repeat(Math.min(3,Math.max(1,Math.round(w.score/3))));
+  const peakStr=w.peak.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+  const why=w.hits.length?w.hits.map(h=>`${h.transiting} ${h.aspect.name} ${h.natal==="MC"?"MC":h.natal}`).join(" + "):"harmonious sky";
+  const flavor=w.hits.length?aspectFlavor(w.hits[0]):"A naturally easy stretch.";
+  return `<div class="lucky"><div class="win">${fmtRange(w.time,w.end)}<small class="peak">peak ${peakStr}</small></div><div class="why">${flavor}<small>${why} · <span class="star">${stars}</span></small></div></div>`;
 }
 
 function renderMonth(){
@@ -588,10 +616,35 @@ function renderMonth(){
   const tier=s=>{const z=(s-mean)/sd;if(z>1)return 3;if(z>0.4)return 2;return 1;};
   let cells="";["S","M","T","W","T","F","S"].forEach(d=>cells+=`<div class="dow">${d}</div>`);
   for(let i=0;i<startDow;i++)cells+=`<div class="daycell empty"></div>`;
-  for(const ds of dayScores){const t=tier(ds.score);const isToday=ds.day===now.getDate();cells+=`<div class="daycell ${t===3?'lucky-3':t===2?'lucky-2':''} ${isToday?'today':''}"><span class="num">${ds.day}</span><span class="score">${"<span class='dot'></span>".repeat(t)}</span></div>`;}
+  for(const ds of dayScores){const t=tier(ds.score);const isToday=ds.day===now.getDate();cells+=`<div class="daycell tappable ${t===3?'lucky-3':t===2?'lucky-2':''} ${isToday?'today':''}" data-day="${ds.day}"><span class="num">${ds.day}</span><span class="score">${"<span class='dot'></span>".repeat(t)}</span></div>`;}
   $("month-grid").innerHTML=cells;
+  // tap any calendar day to reveal its lucky times in the detail panel
+  $("month-grid").querySelectorAll(".daycell.tappable").forEach(el=>{
+    el.addEventListener("click",()=>{
+      const day=+el.dataset.day;
+      $("month-grid").querySelectorAll(".daycell").forEach(c=>c.classList.remove("sel"));
+      el.classList.add("sel");
+      const wins=luckyWindowsForDay(new Date(year,mon,day,0,0,0),4);
+      const date=new Date(year,mon,day);
+      $("daypick-title").textContent=date.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+      $("daypick-body").innerHTML=wins.length?wins.map(w=>luckyRowHtml(w)).join(""):`<div class="dim" style="font-size:14px">Even energy all day — no standout hour. Lead with your own timing.</div>`;
+      $("daypick").classList.remove("hide");
+      $("daypick").scrollIntoView({behavior:"smooth",block:"nearest"});
+    });
+  });
   const best=[...dayScores].sort((a,b)=>b.score-a.score).slice(0,5).sort((a,b)=>a.day-b.day);
-  $("month-why").innerHTML=best.map(b=>{const date=new Date(year,mon,b.day);const gh=b.hits.filter(h=>h.aspect.luck>0).slice(0,2);const why=gh.length?gh.map(h=>`${h.transiting} ${h.aspect.name} natal ${h.natal}`).join(", "):"a calm, supportive sky";const flav=gh.length?aspectFlavor(gh[0]):"An easy day to make your own.";return `<div class="lucky"><div class="win">${date.toLocaleDateString(undefined,{month:"short",day:"numeric"})}</div><div class="why">${flav}<small>${why}</small></div></div>`;}).join("");
+  $("month-why").innerHTML=best.map(b=>{const date=new Date(year,mon,b.day);const gh=b.hits.filter(h=>h.aspect.luck>0).slice(0,2);const why=gh.length?gh.map(h=>`${h.transiting} ${h.aspect.name} natal ${h.natal==="MC"?"MC":h.natal}`).join(", "):"a calm, supportive sky";const flav=gh.length?aspectFlavor(gh[0]):"An easy day to make your own.";return `<div class="lucky lucky-day" data-day="${b.day}"><div class="win">${date.toLocaleDateString(undefined,{month:"short",day:"numeric"})}<small class="peak">tap for times ▾</small></div><div class="why">${flav}<small>${why}</small></div></div><div class="day-times hide" id="daytimes-${b.day}"></div>`;}).join("");
+  // wire expand-on-tap to show that day's best TIMES
+  $("month-why").querySelectorAll(".lucky-day").forEach(el=>{
+    el.addEventListener("click",()=>{
+      const day=+el.dataset.day;const box=$("daytimes-"+day);
+      if(!box.classList.contains("hide")){box.classList.add("hide");return;}
+      // compute that day's hourly windows on demand
+      const wins=luckyWindowsForDay(new Date(year,mon,day,0,0,0),4);
+      box.innerHTML=wins.length?wins.map(w=>luckyRowHtml(w)).join(""):`<div class="dim" style="font-size:13px;padding:8px 0">Even energy all day — no standout hour.</div>`;
+      box.classList.remove("hide");
+    });
+  });
   const peak=dayScores.reduce((a,b)=>b.score>a.score?b:a);
   $("month-note").textContent=`Your strongest day this month looks like ${new Date(year,mon,peak.day).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})}. Shading shows how favorable each day's transits are to your chart, scored at midday.`;
 }
