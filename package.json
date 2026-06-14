@@ -1,0 +1,7 @@
+{
+  "name": "stellar",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Stellar — daily astrology readings from a real natal chart"
+}
