@@ -119,6 +119,12 @@
   .jcell:hover{background:rgba(255,255,255,.05)}
   .jcell.has-journal{background:rgba(127,200,196,.12)}
   .jdot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--teal)}
+  .relate-row{display:flex;gap:13px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+  .relate-row:last-child{border:none}
+  .relate-info{flex:1}
+  .relate-name{color:var(--star);font-size:15px;font-weight:600;margin-bottom:3px}
+  .relate-day{font-size:14px;color:var(--dim);line-height:1.5}
+  .relate-base{font-size:12px;color:var(--dim);opacity:.7;margin-top:4px;font-style:italic}
   .win .peak{display:block;color:var(--teal);font-size:11px;font-weight:600;margin-top:2px;letter-spacing:0}
   .lucky-day{cursor:pointer;border-radius:10px;transition:background .15s}
   .lucky-day:hover{background:rgba(255,255,255,.03)}
@@ -327,12 +333,16 @@
         <div class="between"><span class="label">Notable now</span></div>
         <div class="card"><div id="events-list"></div></div>
       </div>
+      <div id="relate-section" class="hide">
+        <div class="between"><span class="label">You & your people today</span></div>
+        <div class="card"><div id="relate-body"></div></div>
+      </div>
       <div class="between"><span class="label">Make the most of today</span></div>
       <div class="card"><div id="lifestyle-body"></div></div>
       <div class="between"><span class="label">Lucky windows today</span></div>
       <div class="card"><div id="lucky-tznote" class="dim" style="font-size:12px;margin-bottom:10px"></div><div id="lucky-list"><div class="loading dotpulse">Finding your windows</div></div></div>
 
-      <div class="between"><span class="label">Card of the day</span></div>
+      <div class="between"><span class="label">Tarot card of the day</span></div>
       <div class="card"><div id="tarot-box"></div></div>
 
       <!-- technical detail, lower down -->
@@ -735,6 +745,7 @@ function renderDash(){
   $("sky-chips").innerHTML=PLANETS.map(p=>{if(cachedTransit[p.key]==null)return"";const s=signFromLon(cachedTransit[p.key]);return `<span class="chip">${p.glyph} <b>${p.key}</b> ${s.degInSign.toFixed(0)}° ${s.sign}</span>`;}).join("");
   cachedEvents=notableEvents(now);
   renderEvents(cachedEvents);
+  renderRelateToday(cachedTransit);
   // nav arrows state
   $("day-prev").classList.toggle("disabled",dayOffset<=-7);
   $("day-next").classList.toggle("disabled",dayOffset>=7);
@@ -1459,6 +1470,60 @@ function fetchNatalReading(){ try{renderNatalReadingOffline();}catch(e){$("natal
 function escapeHtml(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 
 /* ============ DAILY READING (assembled, no API) ============ */
+/* ============ HOW YOU RELATE TO YOUR OTHER PROFILES TODAY ============
+   For each other profile: natal synastry tone + today's transiting Moon
+   bridging the two charts = the day's relational weather between you. */
+function relatePairToday(meChart,themChart,transit){
+  // 1) baseline synastry tone between the two natal charts
+  const hits=computeSynastry(meChart,themChart);
+  let pos=0,neg=0;for(const h of hits){if(h.score>0)pos++;else if(h.score<0)neg++;}
+  const baseTone=pos>neg+1?"warm":neg>pos+1?"spiky":"balanced";
+  // 2) today's transiting Moon (and Sun) bridging both charts
+  let bridge=null,bridgeType=null;
+  for(const tp of ["Moon","Sun","Venus"]){
+    if(transit[tp]==null)continue;
+    for(const pl of ["Moon","Venus","Sun","Mars"]){
+      if(meChart[pl]==null||themChart[pl]==null)continue;
+      let dA=Math.abs(transit[tp]-meChart[pl])%360;if(dA>180)dA=360-dA;
+      let dB=Math.abs(transit[tp]-themChart[pl])%360;if(dB>180)dB=360-dB;
+      const harm=x=>x<6||Math.abs(x-120)<6||Math.abs(x-60)<6;
+      const hard=x=>Math.abs(x-90)<5||Math.abs(x-180)<6;
+      if(harm(dA)&&harm(dB)){bridge=tp;bridgeType="harm";break;}
+      if((hard(dA)&&harm(dB))||(harm(dA)&&hard(dB))||(hard(dA)&&hard(dB))){bridge=tp;bridgeType="hard";}
+    }
+    if(bridge&&bridgeType==="harm")break;
+  }
+  return {baseTone,bridge,bridgeType};
+}
+function renderRelateToday(transit){
+  const others=profiles.filter(p=>p.id!==activeId&&p.date&&p.lat!=null);
+  if(!others.length){$("relate-section").classList.add("hide");return;}
+  const me=cachedNatal;
+  const rows=others.map(o=>{
+    const them=computeChart(buildBirthDate(o));
+    const {baseTone,bridge,bridgeType}=relatePairToday(me,them,transit);
+    const name=o.name?o.name.split(" ")[0]:"Them";
+    // day-specific line
+    let day;
+    if(bridge&&bridgeType==="harm"){
+      day=bridge==="Moon"?"Today's Moon links your feelings — an easy, in-sync day to connect."
+        :bridge==="Venus"?"Venus bridges you today — affection and goodwill flow naturally."
+        :"The day's Sun lights you both up — you'll see eye to eye.";
+    }else if(bridge&&bridgeType==="hard"){
+      day=bridge==="Moon"?"Today's Moon stirs both your charts — emotions run high; give each other room."
+        :"The day pulls on you differently — patience helps; you each need something distinct right now.";
+    }else{
+      day="A neutral day between you — no strong pull either way, so meet on your own terms.";
+    }
+    // baseline tone line
+    const base=baseTone==="warm"?"Underneath, your charts naturally get along."
+      :baseTone==="spiky"?"Your charts run hot together — passionate, sometimes friction-filled."
+      :"Your charts strike a balanced mix of ease and spark.";
+    return `<div class="relate-row"><div class="pm-av">${initials(o.name)}</div><div class="relate-info"><div class="relate-name">You & ${escapeHtml(name)}</div><div class="relate-day">${day}</div><div class="relate-base">${base}</div></div></div>`;
+  }).join("");
+  $("relate-body").innerHTML=rows;
+  $("relate-section").classList.remove("hide");
+}
 function renderDailyReadingOffline(){
   const name=profile.name||"";
   const paras=[];
@@ -1493,25 +1558,6 @@ function renderDailyReadingOffline(){
     else if(cachedEvents.eclipse)paras.push(`This is eclipse season: a ${cachedEvents.eclipse.kind} falls at ${cachedEvents.eclipse.deg} ${cachedEvents.eclipse.sign}. Eclipses speed things up — let what wants to change, change.`);
     else if(cachedEvents.retro.length){const r=cachedEvents.retro[0];paras.push(r.planet==="Mercury"?`One note: Mercury is retrograde in ${r.sign} right now — a good stretch to revise and double-check rather than launch.`:`One note: ${r.planet} is retrograde in ${r.sign} — a season for review rather than bold new starts in that area.`);}
   }
-  // how you & another profile relate today (transit Moon/Venus bridging the two charts)
-  try{
-    const other=profiles.find(p=>p.id!==activeId&&p.date);
-    if(other){
-      const co=computeChart(buildBirthDate(other));
-      const tMoon=cachedTransit.Moon;
-      // does today's Moon harmonize one chart's Moon/Venus/Sun with the other's?
-      let bridge=null;
-      for(const pl of ["Moon","Venus","Sun"]){
-        if(cachedNatal[pl]==null||co[pl]==null)continue;
-        let dA=Math.abs(tMoon-cachedNatal[pl])%360;if(dA>180)dA=360-dA;
-        let dB=Math.abs(tMoon-co[pl])%360;if(dB>180)dB=360-dB;
-        const near=x=>x<6||Math.abs(x-120)<6||Math.abs(x-60)<6;
-        if(near(dA)&&near(dB)){bridge=pl;break;}
-      }
-      const oName=other.name?other.name.split(" ")[0]:"someone close";
-      if(bridge)paras.push(`Today's Moon touches both your chart and ${oName}'s — a naturally warm day for the two of you. ${bridge==="Moon"?"Emotions sync up; a good time to connect.":bridge==="Venus"?"Affection flows easily between you.":"You see eye to eye more than usual."}`);
-    }
-  }catch(e){}
   $("reading").innerHTML=paras.map((p,i)=>`<p${i===0?' class="lead"':''}>${escapeHtml(p)}</p>`).join("");
   $("reroll").classList.add("hide");
   // lifestyle guidance for the day
