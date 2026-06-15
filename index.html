@@ -94,6 +94,31 @@
   .day-nav.disabled{opacity:.3;pointer-events:none}
   #journal-text{width:100%;background:#0c1120;border:1px solid var(--line);border-radius:12px;color:var(--star);font:inherit;font-size:15px;line-height:1.5;padding:12px;resize:vertical;outline:none;box-sizing:border-box}
   #journal-text:focus{border-color:var(--gold)}
+  .tarot-draw{position:relative;width:100%;background:linear-gradient(160deg,#1a1f38,#0c1020);border:1px solid var(--gold-soft);border-radius:16px;padding:30px 16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;overflow:hidden;transition:transform .2s}
+  .tarot-draw:hover{transform:translateY(-2px);border-color:var(--gold)}
+  .tarot-back{font-size:34px;color:var(--gold);animation:twinkle 2s ease-in-out infinite}
+  @keyframes twinkle{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
+  .tarot-cta{font-family:"SF Mono",monospace;font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold)}
+  .tarot-draw.flipping{animation:flipout .65s ease-in forwards}
+  @keyframes flipout{0%{transform:rotateY(0)}100%{transform:rotateY(90deg);opacity:0}}
+  .sparkles{position:absolute;inset:0;pointer-events:none}
+  .sparkles span{position:absolute;left:50%;top:50%;width:6px;height:6px;background:var(--gold);border-radius:50%;box-shadow:0 0 8px var(--gold);animation:spark .65s ease-out forwards}
+  .sparkles span:nth-child(1){--a:0deg}.sparkles span:nth-child(2){--a:45deg}.sparkles span:nth-child(3){--a:90deg}.sparkles span:nth-child(4){--a:135deg}.sparkles span:nth-child(5){--a:180deg}.sparkles span:nth-child(6){--a:225deg}.sparkles span:nth-child(7){--a:270deg}.sparkles span:nth-child(8){--a:315deg}
+  @keyframes spark{0%{transform:translate(-50%,-50%) rotate(var(--a)) translateX(0);opacity:1}100%{transform:translate(-50%,-50%) rotate(var(--a)) translateX(90px);opacity:0}}
+  .tarot-card{text-align:center;padding:8px 4px}
+  .tarot-card.reveal{animation:cardin .5s ease-out}
+  @keyframes cardin{0%{transform:rotateY(-90deg) scale(.9);opacity:0}100%{transform:rotateY(0) scale(1);opacity:1}}
+  .tarot-name{font-size:22px;color:var(--gold);font-family:Georgia,serif;margin-bottom:6px}
+  .tarot-kw{font-family:"SF Mono",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:12px}
+  .tarot-day{font-size:14px;color:var(--dim);line-height:1.55}
+  .syn-score{margin:6px 0 16px;padding:14px;background:rgba(255,255,255,.02);border-radius:12px}
+  .syn-meter{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+  .syn-lbl{font-size:13px;color:var(--dim)}
+  .syn-bar{font-size:13px;color:var(--gold);letter-spacing:2px}
+  .jcell{cursor:pointer;position:relative}
+  .jcell:hover{background:rgba(255,255,255,.05)}
+  .jcell.has-journal{background:rgba(127,200,196,.12)}
+  .jdot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--teal)}
   .win .peak{display:block;color:var(--teal);font-size:11px;font-weight:600;margin-top:2px;letter-spacing:0}
   .lucky-day{cursor:pointer;border-radius:10px;transition:background .15s}
   .lucky-day:hover{background:rgba(255,255,255,.03)}
@@ -307,6 +332,9 @@
       <div class="between"><span class="label">Lucky windows today</span></div>
       <div class="card"><div id="lucky-tznote" class="dim" style="font-size:12px;margin-bottom:10px"></div><div id="lucky-list"><div class="loading dotpulse">Finding your windows</div></div></div>
 
+      <div class="between"><span class="label">Card of the day</span></div>
+      <div class="card"><div id="tarot-box"></div></div>
+
       <!-- technical detail, lower down -->
       <div class="between"><span class="label">What's touching your chart</span></div>
       <div class="card"><div id="transit-list"></div>
@@ -337,6 +365,12 @@
       </div>
       <div class="between"><span class="label">Best days & times this month</span></div>
       <div class="card"><div id="month-why"></div></div>
+      <div class="between"><span class="label">Journal this month</span></div>
+      <div class="card">
+        <p class="dim" style="font-size:13px;margin-bottom:10px">Days with a journal entry are marked. Tap one to jump to it.</p>
+        <div class="monthgrid" id="journal-grid"></div>
+        <button class="btn ghost" id="journal-export" style="margin-top:14px">Export this month's journal as PDF</button>
+      </div>
     </div>
   </section>
 
@@ -716,6 +750,7 @@ function renderDash(){
   computeLuckyWindows(now);fetchReading();
   renderSkyNow();
   renderJournal(now);
+  renderTarot();
 }
 function journalKey(date){const ds=date.toISOString().slice(0,10);return `stellar.journal.${activeId||"x"}.${ds}`;}
 function renderJournal(date){
@@ -735,16 +770,18 @@ function loadNowLoc(){try{const r=localStorage.getItem("stellar.nowloc");if(r)no
 function saveNowLoc(l){nowLoc=l;try{localStorage.setItem("stellar.nowloc",JSON.stringify(l));}catch(e){}}
 function renderSkyNow(){
   if(!window.Astronomy)return;
-  const now=new Date();
-  const sky=computeChart(now);
-  // angles need a location; use saved nowLoc, else skip angles
+  // use the viewed day (noon) so the chart actually shifts as you change days
+  const isToday=dayOffset===0;
+  const when=isToday?new Date():(()=>{const d=viewedDate();d.setHours(12,0,0,0);return d;})();
+  const sky=computeChart(when);
   let angles=null;
-  if(nowLoc&&nowLoc.lat!=null){angles=computeAngles(now,nowLoc.lat,nowLoc.lng);}
+  if(nowLoc&&nowLoc.lat!=null){angles=computeAngles(when,nowLoc.lat,nowLoc.lng);}
   drawWheelInto("now-wheel",sky,angles);
   const sun=signFromLon(sky.Sun),moon=signFromLon(sky.Moon);
   let summ=`Sun ${sun.degInSign.toFixed(0)}° ${sun.sign} · Moon ${moon.degInSign.toFixed(0)}° ${moon.sign}`;
-  if(angles){const asc=signFromLon(angles.asc);summ+=`<br>${asc.sign} rising right now${nowLoc.name?" in "+nowLoc.name:""}`;}
-  else{summ+=`<br><span style="opacity:.7">set your location to see what's rising right now</span>`;}
+  if(angles&&isToday){const asc=signFromLon(angles.asc);summ+=`<br>${asc.sign} rising right now${nowLoc.name?" in "+nowLoc.name:""}`;}
+  else if(angles){const asc=signFromLon(angles.asc);summ+=`<br>${asc.sign} rising at noon${nowLoc.name?" in "+nowLoc.name:""}`;}
+  else{summ+=`<br><span style="opacity:.7">set your location to see what's rising</span>`;}
   $("now-summary").innerHTML=summ;
 }
 
@@ -831,6 +868,52 @@ function renderMonth(){
   });
   const peak=dayScores.reduce((a,b)=>b.score>a.score?b:a);
   $("month-note").textContent=`Your strongest day this month looks like ${new Date(year,mon,peak.day).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})}. Shading shows how favorable each day's transits are to your chart, scored at midday.`;
+  renderJournalCalendar(year,mon,daysInMonth,startDow);
+}
+function journalEntriesForMonth(year,mon,daysInMonth){
+  const entries=[];
+  for(let d=1;d<=daysInMonth;d++){
+    const date=new Date(year,mon,d);const key=journalKey(date);
+    let txt="";try{txt=localStorage.getItem(key)||"";}catch(e){}
+    if(txt.trim())entries.push({day:d,date,text:txt});
+  }
+  return entries;
+}
+function renderJournalCalendar(year,mon,daysInMonth,startDow){
+  const entries=journalEntriesForMonth(year,mon,daysInMonth);
+  const hasEntry=new Set(entries.map(e=>e.day));
+  const today=new Date();
+  let cells="";["S","M","T","W","T","F","S"].forEach(d=>cells+=`<div class="dow">${d}</div>`);
+  for(let i=0;i<startDow;i++)cells+=`<div class="daycell empty"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const marked=hasEntry.has(d);const isToday=d===today.getDate()&&mon===today.getMonth()&&year===today.getFullYear();
+    cells+=`<div class="daycell jcell ${marked?'has-journal':''} ${isToday?'today':''}" data-jday="${d}"><span class="num">${d}</span>${marked?'<span class="jdot">✦</span>':''}</div>`;
+  }
+  $("journal-grid").innerHTML=cells;
+  $("journal-grid").querySelectorAll(".jcell").forEach(el=>el.addEventListener("click",()=>{
+    const d=+el.dataset.jday;const delta=Math.round((new Date(year,mon,d)-new Date(today.getFullYear(),today.getMonth(),today.getDate()))/86400000);
+    if(delta<-7||delta>7){alert("Journal jump works within a week of today. Use the day arrows for older entries.");return;}
+    dayOffset=delta;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelector('.tab[data-view="today"]').classList.add("active");$("view-today").classList.remove("hide");$("view-month").classList.add("hide");renderDash();$("journal-text")&&$("journal-text").scrollIntoView({behavior:"smooth",block:"center"});
+  }));
+}
+function exportJournalPDF(){
+  const now=new Date(),year=now.getFullYear(),mon=now.getMonth(),daysInMonth=new Date(year,mon+1,0).getDate();
+  const entries=journalEntriesForMonth(year,mon,daysInMonth);
+  const monthName=now.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  const who=profile&&profile.name?profile.name:"";
+  if(!entries.length){alert("No journal entries this month yet.");return;}
+  // build a printable HTML doc and trigger print-to-PDF
+  const w=window.open("","_blank");
+  if(!w){alert("Allow pop-ups to export your journal.");return;}
+  const body=entries.map(e=>{
+    const dl=e.date.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+    return `<div class="entry"><h3>${dl}</h3><p>${escapeHtml(e.text).replace(/\n/g,"<br>")}</p></div>`;
+  }).join("");
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Stellar Journal — ${monthName}</title>
+  <style>body{font-family:Georgia,serif;max-width:640px;margin:40px auto;padding:0 24px;color:#1a1a2e;line-height:1.6}h1{font-size:28px;border-bottom:2px solid #e8c97a;padding-bottom:10px}h2{color:#7a6;font-size:14px;letter-spacing:.1em;text-transform:uppercase;font-weight:normal}.entry{margin:24px 0;page-break-inside:avoid}.entry h3{font-size:17px;color:#b8893a;margin-bottom:4px}.entry p{margin:0}@media print{body{margin:0}}</style></head>
+  <body><h1>✦ Stellar Journal</h1><h2>${monthName}${who?" · "+escapeHtml(who):""}</h2>${body}
+  <script>setTimeout(()=>window.print(),400);<\/script></body></html>`);
+  w.document.close();
 }
 
 /* ============ OFFLINE INTERPRETATION LIBRARY ============ */
@@ -1114,6 +1197,96 @@ function transitFlavor(t,type){const e=TRANSIT_FLAVOR[t];return (e&&e[type])?e[t
    Keyed by the element of the Moon's sign (the day's emotional tone) and the
    driving transit planet. All standard astrological correspondences. */
 const ELEMENT_OF={Aries:"fire",Leo:"fire",Sagittarius:"fire",Taurus:"earth",Virgo:"earth",Capricorn:"earth",Gemini:"air",Libra:"air",Aquarius:"air",Cancer:"water",Scorpio:"water",Pisces:"water"};
+/* ============ TAROT — full 78-card deck, upright meanings ============ */
+const TAROT=[
+// Major Arcana (22)
+{n:"The Fool",m:"new beginnings, leaps of faith, innocence, spontaneity",d:"Today invites a fresh start — take the leap you've been hesitating on. Trust the unknown."},
+{n:"The Magician",m:"manifestation, resourcefulness, willpower, skill",d:"You have all the tools you need today. Focus your will and make something happen."},
+{n:"The High Priestess",m:"intuition, mystery, the subconscious, inner knowing",d:"Listen to your inner voice today rather than logic. Answers come through stillness."},
+{n:"The Empress",m:"abundance, nurturing, creativity, fertility, the senses",d:"A day to nurture and create. Tend to what's growing, indulge your senses, give care."},
+{n:"The Emperor",m:"structure, authority, stability, leadership",d:"Bring order and structure today. Take charge, set the framework, lead with steadiness."},
+{n:"The Hierophant",m:"tradition, guidance, learning, shared values",d:"Lean on tradition or a mentor today. There's wisdom in the established way."},
+{n:"The Lovers",m:"union, choices, alignment of values, partnership",d:"A meaningful choice or connection is highlighted. Choose from your deepest values."},
+{n:"The Chariot",m:"determination, willpower, victory, focused drive",d:"Harness your drive and push forward today. Discipline and focus win the day."},
+{n:"Strength",m:"inner strength, courage, patience, gentle control",d:"Meet today's challenge with calm courage, not force. Gentleness is your power."},
+{n:"The Hermit",m:"introspection, solitude, inner guidance, soul-searching",d:"A day for stepping back and reflecting. Solitude brings the clarity you seek."},
+{n:"Wheel of Fortune",m:"cycles, change, fate, turning points",d:"The wheel turns today — luck and change are in motion. Go with the shift."},
+{n:"Justice",m:"fairness, truth, cause and effect, accountability",d:"Truth and fairness matter today. Act with integrity; what you put out returns."},
+{n:"The Hanged Man",m:"surrender, new perspective, pause, letting go",d:"Today asks you to pause and see things differently. Surrender the need to force."},
+{n:"Death",m:"endings, transformation, release, rebirth",d:"Something is ending to make room for the new. Let go — transformation is freeing."},
+{n:"Temperance",m:"balance, moderation, patience, blending",d:"Seek the middle path today. Blend, balance, and move with patient moderation."},
+{n:"The Devil",m:"attachment, temptation, materialism, what binds you",d:"Notice what holds you today — a habit, a fear, an attachment. Awareness loosens its grip."},
+{n:"The Tower",m:"sudden change, upheaval, revelation, breakthrough",d:"A sudden shake-up may clear away what was unstable. Disruption makes space for truth."},
+{n:"The Star",m:"hope, renewal, inspiration, healing",d:"A hopeful, healing day. Reconnect with your faith and let inspiration guide you."},
+{n:"The Moon",m:"intuition, illusion, dreams, the subconscious",d:"Things may be unclear today — trust intuition over appearances. Honor your dreams."},
+{n:"The Sun",m:"joy, success, vitality, clarity",d:"A bright, warm day of confidence and joy. Let yourself shine and enjoy success."},
+{n:"Judgement",m:"reckoning, awakening, renewal, calling",d:"A moment of clarity or calling today. Answer it; rise to a new version of yourself."},
+{n:"The World",m:"completion, achievement, wholeness, fulfillment",d:"A cycle completes today — celebrate how far you've come. You're where you need to be."},
+];
+// Minor Arcana — four suits
+const SUITS=[
+ {suit:"Wands",elem:"fire",theme:"passion, energy, action, inspiration"},
+ {suit:"Cups",elem:"water",theme:"emotion, love, relationships, intuition"},
+ {suit:"Swords",elem:"air",theme:"thought, communication, conflict, truth"},
+ {suit:"Pentacles",elem:"earth",theme:"work, money, health, the material world"},
+];
+const RANKS=[
+ {r:"Ace",m:"a new beginning and pure potential in"},
+ {r:"Two",m:"balance, choice, and partnership in"},
+ {r:"Three",m:"growth, collaboration, and early results in"},
+ {r:"Four",m:"stability, rest, and foundation in"},
+ {r:"Five",m:"conflict, loss, or challenge in"},
+ {r:"Six",m:"harmony, progress, and reward in"},
+ {r:"Seven",m:"assessment, perseverance, and strategy in"},
+ {r:"Eight",m:"movement, mastery, and momentum in"},
+ {r:"Nine",m:"near-completion, resilience, and depth in"},
+ {r:"Ten",m:"completion, culmination, and fullness in"},
+ {r:"Page",m:"curiosity, study, and fresh messages in"},
+ {r:"Knight",m:"action, pursuit, and forward drive in"},
+ {r:"Queen",m:"nurturing mastery and inner command of"},
+ {r:"King",m:"authority, control, and leadership in"},
+];
+const SUIT_DAY={
+ Wands:"a day for action, creativity, and bold energy",
+ Cups:"a day for feelings, relationships, and the heart",
+ Swords:"a day for clear thinking, communication, and truth",
+ Pentacles:"a day for practical matters, work, and the material world",
+};
+// build the 56 minor cards
+for(const s of SUITS){for(const rk of RANKS){
+  TAROT.push({n:`${rk.r} of ${s.suit}`,m:`${rk.m} ${s.theme}`,d:`${SUIT_DAY[s.suit]}. The ${rk.r} brings ${rk.m.replace(/ in$| of$/,"")} to it — let that color how you move through today.`});
+}}
+
+/* daily tarot draw — deterministic per calendar day, same card all day, new at midnight */
+function dayalSeed(date){const y=date.getFullYear(),m=date.getMonth()+1,d=date.getDate();let s=(y*10000+m*100+d);s=(s^(s>>13))*1274126177;return Math.abs(s>>0);}
+function tarotForDay(date,profileId){
+  const seed=dayalSeed(date)+(profileId?profileId.split("").reduce((a,c)=>a+c.charCodeAt(0),0):0);
+  return TAROT[seed%TAROT.length];
+}
+function tarotDrawnKey(date){return `stellar.tarot.${activeId||"x"}.${date.toISOString().slice(0,10)}`;}
+function renderTarot(){
+  const date=viewedDate();
+  const card=tarotForDay(date,activeId);
+  const drawn=(()=>{try{return localStorage.getItem(tarotDrawnKey(date))==="1";}catch(e){return false;}})();
+  const box=$("tarot-box");if(!box)return;
+  if(drawn||dayOffset!==0){
+    // already revealed (or a past/future day — show it directly)
+    box.innerHTML=tarotCardHtml(card);
+  }else{
+    box.innerHTML=`<button class="tarot-draw" id="tarot-draw-btn"><span class="tarot-back">✦</span><span class="tarot-cta">Reveal today's card</span></button>`;
+    const b=$("tarot-draw-btn");if(b)b.addEventListener("click",()=>{
+      try{localStorage.setItem(tarotDrawnKey(date),"1");}catch(e){}
+      b.classList.add("flipping");
+      // sparkle burst then reveal
+      box.insertAdjacentHTML("beforeend",`<div class="sparkles">${"<span></span>".repeat(8)}</div>`);
+      setTimeout(()=>{box.innerHTML=tarotCardHtml(card,true);},650);
+    });
+  }
+}
+function tarotCardHtml(card,animate){
+  return `<div class="tarot-card${animate?" reveal":""}"><div class="tarot-name">${card.n}</div><div class="tarot-kw">${card.m}</div><div class="tarot-day">${card.d}</div></div>`;
+}
+
 const LIFESTYLE={
   fire:{
     mood:"energized and bold",
@@ -1175,17 +1348,59 @@ function computeSynastry(chartA,chartB){
   hits.sort((x,y)=>x.orb-y.orb);
   return hits;
 }
+function houseOverlayText(planet,houseNum){
+  const h=HOUSES[houseNum-1];
+  const intro={Sun:"shines into",Moon:"feels at home in",Venus:"brings warmth and affection to",Mars:"energizes and stirs",Mercury:"sparks conversation in",Jupiter:"brings luck and growth to",Saturn:"brings seriousness and structure to"};
+  return `${intro[planet]||"activates"} the area of ${h.name.toLowerCase()} (${h.theme})`;
+}
 function renderSynastry(idA,idB){
   const pA=profiles.find(p=>p.id===idA),pB=profiles.find(p=>p.id===idB);
   if(!pA||!pB){$("syn-body").innerHTML=`<p class="dim">Pick two charts to compare.</p>`;return;}
   const cA=computeChart(buildBirthDate(pA)),cB=computeChart(buildBirthDate(pB));
   const hits=computeSynastry(cA,cB);
+  const an=pA.name?pA.name.split(" ")[0]:"A",bn=pB.name?pB.name.split(" ")[0]:"B";
+  // scorecard: tally by category
+  let chemistry=0,harmony=0,friction=0,bonding=0;
+  for(const h of hits){
+    const pair=[h.a,h.b].sort().join("-");
+    const harmonic=(h.aspect.name==="trine"||h.aspect.name==="sextile"||h.aspect.name==="conjunction");
+    if((pair.includes("Venus")&&pair.includes("Mars"))||pair==="Mars-Venus")chemistry+=harmonic?2:1;
+    if(pair.includes("Venus")||pair.includes("Moon")){if(harmonic)harmony+=1;else friction+=1;}
+    if(pair.includes("Saturn")||pair.includes("Sun"))bonding+=harmonic?1:0.5;
+    if(!harmonic&&(h.aspect.name==="square"||h.aspect.name==="opposition"))friction+=1;
+  }
+  const bar=(v,max)=>{const n=Math.min(5,Math.round(v/Math.max(1,max)*5));return "●".repeat(Math.max(1,n))+"○".repeat(5-Math.max(1,n));};
+  const maxv=Math.max(chemistry,harmony,friction,bonding,3);
   const pos=hits.filter(h=>h.score>0).length,neg=hits.filter(h=>h.score<0).length;
-  const overall=pos>neg+2?"a warm, flowing connection with real ease between you":neg>pos+2?"a charged, growth-driven connection with friction that keeps things alive":"a balanced mix of ease and spark";
-  let html=`<p class="dim" style="font-size:14px;margin-bottom:12px"><b style="color:var(--star)">${escapeHtml(pA.name||"Chart A")}</b> & <b style="color:var(--star)">${escapeHtml(pB.name||"Chart B")}</b> share ${overall}.</p>`;
+  const overall=pos>neg+2?"a warm, flowing connection with real ease between you":neg>pos+2?"a charged, growth-driven connection — friction that keeps things alive":"a balanced mix of ease and spark";
+  let html=`<p class="dim" style="font-size:14px;margin-bottom:14px"><b style="color:var(--star)">${escapeHtml(pA.name||"Chart A")}</b> & <b style="color:var(--star)">${escapeHtml(pB.name||"Chart B")}</b> share ${overall}.</p>`;
+  // scorecard
+  html+=`<div class="syn-score">`+
+    [["Chemistry",chemistry],["Harmony",harmony],["Depth & bonding",bonding],["Friction & growth",friction]].map(([lbl,v])=>
+      `<div class="syn-meter"><span class="syn-lbl">${lbl}</span><span class="syn-bar">${bar(v,maxv)}</span></div>`).join("")+`</div>`;
+  // cross-aspects
   const named=hits.map(h=>{const t=synastryText(h.a,h.b,h.aspect.name);return t?{...h,text:t}:null;}).filter(Boolean).slice(0,8);
-  if(!named.length)html+=`<p class="dim" style="font-size:14px">No standout cross-aspects between the major planets — a quieter, more independent pairing.</p>`;
-  else html+=named.map(h=>{const strength=h.orb<2?"strong":h.orb<5?"notable":"subtle";const an=pA.name?pA.name.split(" ")[0]+"'s ":"";const bn=pB.name?pB.name.split(" ")[0]+"'s ":"";return `<div class="ir-item"><div class="h">${planetGlyph(h.a)} ${an}${h.a} ${h.aspect.name} ${bn}${h.b} ${planetGlyph(h.b)}</div><div class="b">${h.text.charAt(0).toUpperCase()+h.text.slice(1)}. <span class="em">(${strength})</span></div></div>`;}).join("");
+  if(named.length){
+    html+=`<div class="ir"><h4>The connections between you</h4>`;
+    html+=named.map(h=>{const strength=h.orb<2?"strong":h.orb<5?"notable":"subtle";return `<div class="ir-item"><div class="h">${planetGlyph(h.a)} ${an}'s ${h.a} ${h.aspect.name} ${bn}'s ${h.b} ${planetGlyph(h.b)}</div><div class="b">${h.text.charAt(0).toUpperCase()+h.text.slice(1)}. <span class="em">(${strength})</span></div></div>`;}).join("")+`</div>`;
+  }
+  // house overlays — where A's planets land in B's houses (needs B's angles)
+  const angB=(pB.time&&pB.lat!=null)?computeAngles(buildBirthDate(pB),pB.lat,pB.lng):null;
+  const angA=(pA.time&&pA.lat!=null)?computeAngles(buildBirthDate(pA),pA.lat,pA.lng):null;
+  function overlaySection(fromName,fromChart,toName,toAngles){
+    if(!toAngles)return "";
+    let s=`<div class="ir"><h4>How ${fromName} shows up in ${toName}'s life</h4>`;
+    let any=false;
+    for(const pl of ["Sun","Moon","Venus","Mars"]){
+      if(fromChart[pl]==null)continue;const hn=houseOf(fromChart[pl],toAngles.cusps);if(!hn)continue;
+      any=true;
+      s+=`<div class="ir-item"><div class="h">${planetGlyph(pl)} ${fromName}'s ${pl}</div><div class="b">${houseOverlayText(pl,hn)} — ${fromName}'s ${pl} ${pl==="Sun"?"naturally lights up":pl==="Venus"?"brings affection to":pl==="Mars"?"energizes":"touches"} this part of ${toName}'s world.</div></div>`;
+    }
+    return any?s+`</div>`:"";
+  }
+  html+=overlaySection(an,cA,bn,angB);
+  html+=overlaySection(bn,cB,an,angA);
+  if(!named.length&&!angA&&!angB)html+=`<p class="dim" style="font-size:14px">Add birth times to both charts to unlock house overlays and the full picture.</p>`;
   $("syn-body").innerHTML=html;
 }
 
@@ -1278,6 +1493,25 @@ function renderDailyReadingOffline(){
     else if(cachedEvents.eclipse)paras.push(`This is eclipse season: a ${cachedEvents.eclipse.kind} falls at ${cachedEvents.eclipse.deg} ${cachedEvents.eclipse.sign}. Eclipses speed things up — let what wants to change, change.`);
     else if(cachedEvents.retro.length){const r=cachedEvents.retro[0];paras.push(r.planet==="Mercury"?`One note: Mercury is retrograde in ${r.sign} right now — a good stretch to revise and double-check rather than launch.`:`One note: ${r.planet} is retrograde in ${r.sign} — a season for review rather than bold new starts in that area.`);}
   }
+  // how you & another profile relate today (transit Moon/Venus bridging the two charts)
+  try{
+    const other=profiles.find(p=>p.id!==activeId&&p.date);
+    if(other){
+      const co=computeChart(buildBirthDate(other));
+      const tMoon=cachedTransit.Moon;
+      // does today's Moon harmonize one chart's Moon/Venus/Sun with the other's?
+      let bridge=null;
+      for(const pl of ["Moon","Venus","Sun"]){
+        if(cachedNatal[pl]==null||co[pl]==null)continue;
+        let dA=Math.abs(tMoon-cachedNatal[pl])%360;if(dA>180)dA=360-dA;
+        let dB=Math.abs(tMoon-co[pl])%360;if(dB>180)dB=360-dB;
+        const near=x=>x<6||Math.abs(x-120)<6||Math.abs(x-60)<6;
+        if(near(dA)&&near(dB)){bridge=pl;break;}
+      }
+      const oName=other.name?other.name.split(" ")[0]:"someone close";
+      if(bridge)paras.push(`Today's Moon touches both your chart and ${oName}'s — a naturally warm day for the two of you. ${bridge==="Moon"?"Emotions sync up; a good time to connect.":bridge==="Venus"?"Affection flows easily between you.":"You see eye to eye more than usual."}`);
+    }
+  }catch(e){}
   $("reading").innerHTML=paras.map((p,i)=>`<p${i===0?' class="lead"':''}>${escapeHtml(p)}</p>`).join("");
   $("reroll").classList.add("hide");
   // lifestyle guidance for the day
@@ -1314,6 +1548,7 @@ function goDay(delta){const nv=dayOffset+delta;if(nv<-7||nv>7)return;dayOffset=n
 $("day-prev").addEventListener("click",()=>goDay(-1));
 $("day-next").addEventListener("click",()=>goDay(1));
 $("journal-save").addEventListener("click",saveJournal);
+$("journal-export").addEventListener("click",exportJournalPDF);
 // swipe left/right on the Today view to change days
 (function(){let x0=null,y0=null;const t=$("view-today");if(!t)return;
   t.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});
