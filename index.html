@@ -86,6 +86,14 @@
   .pm-info .pm-sub{color:var(--dim);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pm-del{color:var(--rose);background:none;border:none;cursor:pointer;font-size:12px;opacity:.6;padding:4px 8px}
   .pm-del:hover{opacity:1}
+  .pm-edit{color:var(--teal);background:none;border:none;cursor:pointer;font-size:12px;opacity:.6;padding:4px 8px}
+  .pm-edit:hover{opacity:1}
+  .datehead{display:flex;align-items:center;gap:10px}
+  .day-nav{background:#0c1120;border:1px solid var(--line);color:var(--gold);width:38px;height:38px;border-radius:50%;font-size:22px;line-height:1;cursor:pointer;flex:0 0 38px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+  .day-nav:hover{border-color:var(--gold)}
+  .day-nav.disabled{opacity:.3;pointer-events:none}
+  #journal-text{width:100%;background:#0c1120;border:1px solid var(--line);border-radius:12px;color:var(--star);font:inherit;font-size:15px;line-height:1.5;padding:12px;resize:vertical;outline:none;box-sizing:border-box}
+  #journal-text:focus{border-color:var(--gold)}
   .win .peak{display:block;color:var(--teal);font-size:11px;font-weight:600;margin-top:2px;letter-spacing:0}
   .lucky-day{cursor:pointer;border-radius:10px;transition:background .15s}
   .lucky-day:hover{background:rgba(255,255,255,.03)}
@@ -248,7 +256,11 @@
   <section id="dash" class="hide">
     <div class="topbar"><div class="mark" style="margin:0">✦ Stellar</div>
       <div class="topbar-right"><button class="linkbtn" id="view-chart">view full chart</button><button class="pcorner" id="pcorner-dash"></button></div></div>
-    <div class="datehead"><div class="label" id="greeting">Good morning</div><div class="d" id="today-date"></div></div>
+    <div class="datehead" id="datehead">
+      <button class="day-nav" id="day-prev" aria-label="Previous day">‹</button>
+      <div style="flex:1"><div class="label" id="greeting">Good morning</div><div class="d" id="today-date"></div></div>
+      <button class="day-nav" id="day-next" aria-label="Next day">›</button>
+    </div>
     <div class="tabs">
       <button class="tab active" data-view="today">Today</button>
       <button class="tab" data-view="month">Lucky days this month</button>
@@ -283,13 +295,21 @@
       <div class="card"><div id="transit-list"></div>
         <div id="no-transits" class="dim hide" style="font-size:14px">A quiet day — no major transits within orb. The reading reflects the prevailing mood of the sky.</div></div>
       <div class="between"><span class="label">Lucky windows today</span></div>
-      <div class="card"><div id="lucky-list"><div class="loading dotpulse">Finding your windows</div></div></div>
+      <div class="card"><div id="lucky-tznote" class="dim" style="font-size:12px;margin-bottom:10px"></div><div id="lucky-list"><div class="loading dotpulse">Finding your windows</div></div></div>
       <div class="between"><span class="label">Your reading</span></div>
       <div class="card"><div id="reading" class="reading"><div class="loading dotpulse">Reading the sky for you</div></div>
         <div class="err hide" id="reading-err"></div>
         <button class="btn ghost hide" id="reroll" style="margin-top:18px">Draw the reading again</button></div>
       <div class="between"><span class="label">Make the most of today</span></div>
       <div class="card"><div id="lifestyle-body"></div></div>
+      <div class="between"><span class="label">Journal</span><span class="dim" id="journal-date" style="font-size:12px"></span></div>
+      <div class="card">
+        <textarea id="journal-text" placeholder="How did this day feel? Notes, dreams, what happened…" rows="5"></textarea>
+        <div class="between" style="margin-top:8px">
+          <span class="dim" id="journal-status" style="font-size:12px"></span>
+          <button class="linkbtn" id="journal-save" style="color:var(--teal)">save entry</button>
+        </div>
+      </div>
     </div>
 
     <div id="view-month" class="hide">
@@ -642,26 +662,30 @@ function openProfileMenu(){
   const list=$("pmenu-list");
   list.innerHTML=profiles.map(p=>{
     const sub=[p.placeName,p.date].filter(Boolean).join(" · ");
-    return `<div class="pm-row ${p.id===activeId?'active':''}" data-pid="${p.id}"><div class="pm-av">${initials(p.name)}</div><div class="pm-info"><div class="pm-name">${escapeHtml(p.name||"Unnamed")}</div><div class="pm-sub">${escapeHtml(sub)}</div></div>${profiles.length>1?`<button class="pm-del" data-del="${p.id}">remove</button>`:""}</div>`;
+    return `<div class="pm-row ${p.id===activeId?'active':''}" data-pid="${p.id}"><div class="pm-av">${initials(p.name)}</div><div class="pm-info"><div class="pm-name">${escapeHtml(p.name||"Unnamed")}</div><div class="pm-sub">${escapeHtml(sub)}</div></div><button class="pm-edit" data-edit="${p.id}">rename</button>${profiles.length>1?`<button class="pm-del" data-del="${p.id}">remove</button>`:""}</div>`;
   }).join("")||`<p class="dim" style="font-size:14px">No charts yet.</p>`;
   list.querySelectorAll(".pm-row").forEach(el=>el.addEventListener("click",e=>{
+    if(e.target.dataset.edit){e.stopPropagation();const id=e.target.dataset.edit;const p=profiles.find(x=>x.id===id);const nn=prompt("Rename this chart:",p.name||"");if(nn!==null){p.name=nn.trim();persistProfiles();openProfileMenu();renderProfileCorners();if(id===activeId&&$("natal-hello"))$("natal-hello").textContent=p.name?`Welcome, ${p.name}`:"Welcome";}return;}
     if(e.target.dataset.del){e.stopPropagation();const id=e.target.dataset.del;if(confirm("Remove this chart?")){deleteProfile(id);if(profile)openProfileMenu();else{closeProfileMenu();startNewProfile();}renderProfileCorners();}return;}
     const id=el.dataset.pid;closeProfileMenu();if(id!==activeId)switchProfile(id);else showNatal();
   }));
   $("pmenu").classList.remove("hide");
 }
 function closeProfileMenu(){$("pmenu").classList.add("hide");}
-function showDash(){$("onboard").classList.add("hide");$("natal").classList.add("hide");$("dash").classList.remove("hide");monthRendered=false;renderDash();}
+function showDash(){$("onboard").classList.add("hide");$("natal").classList.add("hide");$("dash").classList.remove("hide");monthRendered=false;dayOffset=0;renderDash();}
 function showOnboard(){$("dash").classList.add("hide");$("natal").classList.add("hide");$("onboard").classList.remove("hide");populateDateTime();
   // show the back bar only if the user already has at least one saved chart (i.e. not first-run)
   if(profiles.length>0){$("onboard-topbar").classList.remove("hide");}else{$("onboard-topbar").classList.add("hide");}
   if(profile){$("i-name").value=profile.name||"";setDateTime(profile.date||"",profile.time||"");if(profile.placeName){$("i-place").value=profile.placeName;chosenPlace={name:profile.placeName,lat:profile.lat,lng:profile.lng,tz:profile.tz,tzOffset:profile.tzOffset};$("place-set").textContent=`✓ ${profile.lat.toFixed(2)}, ${profile.lng.toFixed(2)} · ${profile.tz||"UTC"}`;$("place-set").classList.remove("hide");}}}
 
+let dayOffset=0; // 0 = today, ±7 max
+function viewedDate(){const d=new Date();d.setDate(d.getDate()+dayOffset);return d;}
 function renderDash(){
   if(!window.Astronomy){$("reading").innerHTML=`<div class="err">Couldn't load the ephemeris library. Check the connection and reload.</div>`;return;}
   renderProfileCorners();
-  const now=new Date(),hr=now.getHours();
-  $("greeting").textContent=hr<12?"Good morning":hr<18?"Good afternoon":"Good evening";
+  const now=viewedDate(),hr=new Date().getHours();
+  const isToday=dayOffset===0;
+  $("greeting").textContent=isToday?(hr<12?"Good morning":hr<18?"Good afternoon":"Good evening"):(dayOffset===1?"Tomorrow":dayOffset===-1?"Yesterday":dayOffset>0?`In ${dayOffset} days`:`${-dayOffset} days ago`);
   $("today-date").textContent=now.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
   computeChartData();cachedTransit=computeChart(now);cachedAspects=findAspects(cachedNatal,cachedTransit);
   drawWheel(cachedNatal,cachedAngles);
@@ -669,10 +693,25 @@ function renderDash(){
   $("sky-chips").innerHTML=PLANETS.map(p=>{if(cachedTransit[p.key]==null)return"";const s=signFromLon(cachedTransit[p.key]);return `<span class="chip">${p.glyph} <b>${p.key}</b> ${s.degInSign.toFixed(0)}° ${s.sign}</span>`;}).join("");
   cachedEvents=notableEvents(now);
   renderEvents(cachedEvents);
+  // nav arrows state
+  $("day-prev").classList.toggle("disabled",dayOffset<=-7);
+  $("day-next").classList.toggle("disabled",dayOffset>=7);
   if(!cachedAspects.length){$("transit-list").classList.add("hide");$("no-transits").classList.remove("hide");}
   else{$("no-transits").classList.add("hide");$("transit-list").classList.remove("hide");$("transit-list").innerHTML=cachedAspects.map(a=>`<div class="transit"><div class="asp">${planetGlyph(a.transiting)}${a.aspect.glyph}${planetGlyph(a.natal)}</div><div class="desc">Transiting <b>${a.transiting}</b> ${a.aspect.name} your natal <b>${a.natal}</b><small>orb ${a.orb.toFixed(1)}°${a.exact?" · exact":""} · ${a.aspect.tone}</small></div></div>`).join("");}
   computeLuckyWindows(now);fetchReading();
   renderSkyNow();
+  renderJournal(now);
+}
+function journalKey(date){const ds=date.toISOString().slice(0,10);return `stellar.journal.${activeId||"x"}.${ds}`;}
+function renderJournal(date){
+  $("journal-date").textContent=date.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  let saved="";try{saved=localStorage.getItem(journalKey(date))||"";}catch(e){}
+  $("journal-text").value=saved;
+  $("journal-status").textContent=saved?"saved":"";
+}
+function saveJournal(){
+  const date=viewedDate();const txt=$("journal-text").value;
+  try{if(txt.trim())localStorage.setItem(journalKey(date),txt);else localStorage.removeItem(journalKey(date));$("journal-status").textContent="saved ✓";setTimeout(()=>{if($("journal-status"))$("journal-status").textContent=txt.trim()?"saved":"";},1500);}catch(e){$("journal-status").textContent="couldn't save";}
 }
 
 /* ============ LIVE SKY-NOW CHART ============ */
@@ -715,8 +754,15 @@ function luckyWindowsForDay(refDate,maxWindows){
   });
 }
 function computeLuckyWindows(refDate){
+  // timezone note: times are shown in the device's local zone
+  const tzName=Intl.DateTimeFormat().resolvedOptions().timeZone||"your local time";
+  const note=$("lucky-tznote");
+  if(note){
+    if(nowLoc&&nowLoc.name){note.innerHTML=`Times shown for <b style="color:var(--star)">${escapeHtml(nowLoc.name)}</b> (${tzName.replace(/_/g," ")}).`;}
+    else{note.innerHTML=`Times shown in your device's timezone (${tzName.replace(/_/g," ")}). <a href="#" id="lucky-setloc" style="color:var(--teal)">Set your location</a> for results tuned to exactly where you are.`;const sl=$("lucky-setloc");if(sl)sl.addEventListener("click",e=>{e.preventDefault();$("now-loc-form")&&$("now-loc-form").classList.remove("hide");$("now-place")&&$("now-place").focus();$("now-loc-form")&&$("now-loc-form").scrollIntoView({behavior:"smooth",block:"center"});});}
+  }
   const wins=luckyWindowsForDay(refDate,4);
-  if(!wins.length){$("lucky-list").innerHTML=`<div class="dim" style="font-size:14px">No standout windows today — the energy's even. Move with your own rhythm.</div>`;luckyWindowsForPrompt=[];return;}
+  if(!wins.length){$("lucky-list").innerHTML=`<div class="dim" style="font-size:14px">No standout windows ${dayOffset===0?"today":"this day"} — the energy's even. Move with your own rhythm.</div>`;luckyWindowsForPrompt=[];return;}
   luckyWindowsForPrompt=wins;
   $("lucky-list").innerHTML=wins.map(w=>luckyRowHtml(w)).join("");
 }
@@ -819,10 +865,136 @@ function houseOf(lon,cusps){
   return 1;
 }
 /* short flavor for a planet expressing through a house */
+/* ============ PLANET IN HOUSE — full standard meanings ============
+   The established astrological significations, written in Stellar's voice.
+   Every planet through every house. These are the laws of the system. */
+const PIH={
+ Sun:["You shine through your own identity and presence — self-driven, visible, needing to be recognized as an individual. Your vitality is tied to expressing who you are.",
+  "Your sense of self is bound up with what you have and what you're worth. You build identity through resources, money, and proving your own value.",
+  "You shine through your mind and your voice — curious, communicative, always learning. Identity is expressed through ideas, words, and your immediate world.",
+  "Your core self is rooted in home, family, and your private world. You shine most in your later years and behind closed doors; your foundations matter deeply.",
+  "You're here to create, perform, and play. Romance, children, art, and self-expression are where your light burns brightest — you need an audience and a stage.",
+  "You shine through work, service, and craft. Identity is built through being useful, mastering the details, and tending to health and daily routine.",
+  "Your sense of self comes alive through partnership. You define yourself through close one-to-one relationships and often shine most when paired with the right other.",
+  "You're drawn to depth, intimacy, and transformation. Identity is forged through crisis, shared resources, and what's hidden — you shine in the intense and the taboo.",
+  "You shine through meaning, travel, belief, and the big picture. You're here to expand your horizons, teach, explore, and seek truth beyond the familiar.",
+  "Your identity is bound to your career and public role. You're here to achieve, to be seen at the top, to build a reputation. Ambition and visibility define you.",
+  "You shine through community, friendship, and shared vision. Groups, networks, and hopes for the future are where your light finds its purpose.",
+  "Your light works behind the scenes — through the spiritual, the unconscious, the hidden. You shine in solitude, compassion, and surrender, often unseen but deeply felt."],
+ Moon:["Your emotions are visible and immediate — you wear your heart openly and react instinctively. Moods shape how you come across.",
+  "You find emotional security through stability, money, and comfort. You need tangible safety, and your feelings rise and fall with your sense of material security.",
+  "Your feelings are tied to communication and your daily surroundings. You process emotion by talking and thinking; your moods shift with your mental environment.",
+  "Deeply emotional about home and family — this is the Moon's natural home. You need a nest, roots, and belonging. The past and your mother loom large.",
+  "Your emotions flow through creativity, romance, and play. You need to express, to be adored, to create. Children and love affairs stir you deeply.",
+  "You find emotional comfort in routine, work, and being needed. Caring for others and keeping order soothes you; you can absorb stress through the body.",
+  "Your emotional wellbeing depends on partnership. You need closeness and can feel incomplete without a significant other to share feelings with.",
+  "Emotionally intense and private — you feel everything at depth. Drawn to intimacy, secrets, and transformation; you need profound emotional bonds, not surface ones.",
+  "Your feelings seek meaning and freedom. You're emotionally nourished by travel, learning, and belief; you may feel at home far from where you started.",
+  "Your emotions are public and tied to your reputation. You may seek recognition for your nurturing, and your career stirs deep feeling. The mother shapes your ambitions.",
+  "You find emotional belonging in community and friendship. Groups feel like family; your feelings are bound up with shared hopes and the people you surround yourself with.",
+  "Your emotional life runs deep and hidden, even from yourself. You need solitude to recharge and may carry feelings you can't fully name; richly intuitive and compassionate."],
+ Mercury:["You think quickly and speak your mind directly; your identity is wrapped up in how you communicate. A restless, expressive mind that others notice.",
+  "Your mind turns toward practical matters — money, value, security. You think deliberately and speak about what's useful; good with tangible plans.",
+  "Mercury's home — a sharp, curious, versatile mind. You're a natural communicator, learner, and connector, always talking, writing, and gathering information.",
+  "Your thinking is shaped by home, family, and the past. You have a deep memory and reflective mind; you process ideas privately before sharing them.",
+  "A creative, playful mind drawn to self-expression. You think through making things; communication is colorful, dramatic, and often aimed at an audience.",
+  "A precise, analytical, detail-oriented mind. You think in terms of problems and solutions, systems and improvements; excellent for craft, health, and work.",
+  "You think through dialogue and relationship. You're a natural mediator and negotiator, weighing both sides; ideas sharpen through partnership and debate.",
+  "A probing, investigative mind drawn to secrets and depth. You think psychologically, research relentlessly, and aren't satisfied with surface explanations.",
+  "A philosophical, big-picture mind. You think in terms of meaning, belief, and the broad view; drawn to travel, higher learning, and teaching what you know.",
+  "Your mind is set on career and reputation. Strategic, ambitious thinking; you communicate publicly and are known for your ideas and how you express them.",
+  "A future-facing, inventive mind drawn to groups and ideas bigger than yourself. You think in systems and networks; communication serves a shared vision.",
+  "An intuitive, imaginative mind that thinks in images and feelings more than logic. You absorb the unspoken; quiet reflection unlocks your best thinking."],
+ Venus:["Charm and attractiveness are part of your very presence — you draw others in naturally. You value beauty in yourself and lead with grace.",
+  "You love comfort, luxury, and the tangible pleasures. Money and possessions are tied to your sense of beauty; you attract resources and value security in love.",
+  "You charm through words and ideas; affection is expressed by talking and connecting. You're drawn to clever, communicative people and love variety.",
+  "Love is centered on home and family. You're deeply affectionate in private, value a beautiful nest, and seek emotional security in relationships.",
+  "Romance, pleasure, and creativity are your natural language. You love to love — flirtatious, warm, drawn to art, play, and the thrill of attraction.",
+  "You show love through service and devotion — small, practical acts of care. Drawn to refinement and order; you value being useful to those you love.",
+  "Venus is at home — relationship and partnership are central to your happiness. You crave harmony, beauty in union, and a true other half; you're a natural at love.",
+  "You love intensely and all-or-nothing. Drawn to deep, transformative, sometimes complicated bonds; intimacy and merging matter more than easy affection.",
+  "You're attracted to the foreign, the philosophical, the adventurous. Love expands your horizons; you may find romance through travel, learning, or different cultures.",
+  "You attract success and may be admired publicly. Love and career intertwine; you value status and may be drawn to accomplished partners or charm your way up.",
+  "You love through friendship first — warmth, equality, and shared ideals. Drawn to unconventional bonds; your social network is wide and affectionate.",
+  "A tender, compassionate, almost spiritual love. You're drawn to the romantic and the sacrificial; capable of unconditional love, but watch for idealizing partners."],
+ Mars:["Forceful, direct, and self-starting — you assert yourself openly and act on instinct. A natural fighter and initiator; strong physical presence and drive.",
+  "You pursue money and security with real drive. Energy goes into building and acquiring; you fight for what you value and can be possessive of resources.",
+  "A sharp, combative mind — you argue, debate, and act through words. Restless mental energy; you assert yourself through communication and quick decisions.",
+  "Your drive is rooted at home, sometimes with family tension. You defend your private world fiercely; energy can run hot behind closed doors.",
+  "Passionate, competitive energy in love, creativity, and play. You pursue romance boldly and create with force; drawn to risk, sport, and the thrill of the chase.",
+  "You channel drive into work and routine. A hard, efficient worker who fights through tasks; energy is tied to health, and overwork is a real risk.",
+  "Your assertion comes out in relationships — passionate, sometimes combative partnerships. You may attract forceful partners or compete with those closest to you.",
+  "Intense, relentless drive aimed at depth, intimacy, and power. Strong sexual energy; you pursue transformation and don't back down from crisis or the taboo.",
+  "Restless energy for adventure, travel, and causes. You fight for beliefs and freedom; drawn to far horizons and pursuing meaning with conviction.",
+  "Fierce ambition — you drive hard toward career and status. A natural at leadership and competition in the public arena; you fight to reach the top.",
+  "Your drive serves the group and the future. You fight for causes and ideals; energy goes into teamwork, activism, and pursuing a shared vision.",
+  "A hidden, indirect drive — you act behind the scenes and may struggle to assert openly. Powerful when channeled into the spiritual, creative, or compassionate."],
+ Jupiter:["Luck and growth shine through your own personality — optimistic, generous, larger-than-life. You expand by being yourself; good fortune follows your confidence.",
+  "Abundance flows toward money and resources. A natural ability to attract wealth and possessions; generous, sometimes excessive, with material things.",
+  "Your mind and communication expand — a lifelong learner, teacher, and optimist in thought. Good fortune through words, ideas, siblings, and your local world.",
+  "Blessings around home and family — a generous, expansive domestic life. You may benefit from family, property, and roots; your foundations bring luck.",
+  "Great fortune in creativity, romance, and children. A generous, playful, lucky streak in love and self-expression; your gifts want a big stage.",
+  "Growth through work and service. You expand by being useful; good fortune in your job and health, though watch for overdoing the daily grind.",
+  "Luck and abundance flow through partnership. Beneficial relationships and marriage; you grow through others and may attract generous, wise partners.",
+  "Fortune through shared resources, intimacy, and transformation. You may benefit from others' money, inheritance, or deep bonds; growth comes through letting go.",
+  "Jupiter's home — vast expansion through travel, learning, and belief. A natural philosopher and explorer; good fortune comes from reaching beyond the familiar.",
+  "Great success and luck in career. You expand through ambition and public life; a generous reputation and opportunities for advancement and recognition.",
+  "Abundance through friendship, groups, and shared hopes. Lucky in community; your network opens doors, and your vision for the future is expansive.",
+  "Fortune through faith, compassion, and the unseen. You grow in solitude and service; spiritual blessings and luck that works quietly behind the scenes."],
+ Saturn:["Self-doubt early in life that hardens into real authority and self-mastery with age. You build identity slowly, through discipline; you may seem serious or reserved.",
+  "Lessons and fears around money and self-worth. You build security the hard way, through discipline and patience; lasting wealth comes slowly but solidly.",
+  "A serious, structured mind that may have doubted itself early. You think carefully and master communication through effort; lasting knowledge built step by step.",
+  "Hard lessons rooted in home and family; a heavy or restrictive early environment. You build your own foundations with effort and become the rock for others.",
+  "Caution around creativity, romance, and children — you may hold back self-expression early. Lasting creative mastery and serious commitment in love come with time.",
+  "Discipline in work and health is your proving ground. A diligent, responsible worker; lessons come through routine, and health requires steady care.",
+  "Serious lessons through partnership — commitment, duty, sometimes delay or restriction in love. Relationships are tested and become lasting through effort.",
+  "Deep lessons around intimacy, shared resources, and control. Fear and mastery around merging, debt, and the taboo; transformation is hard-won but profound.",
+  "Your beliefs are tested and built through experience, not blind faith. Lasting wisdom comes the hard way; you may be a serious traveler, scholar, or teacher.",
+  "Saturn's natural home — ambition, authority, and lasting achievement. Career is your central proving ground; success comes slowly but builds something permanent.",
+  "Lessons through friendship and groups; you may feel like an outsider early. Lasting, loyal bonds and real influence in community come with time and effort.",
+  "Deep, private fears and karmic lessons in the hidden realms. You master the spiritual and unconscious through solitude; old patterns dissolve through discipline."],
+ Uranus:["A strikingly original, unconventional presence — you're here to be different. Sudden changes in self-image; you rebel against being defined by anyone.",
+  "Unconventional, erratic relationship to money. Income may come in flashes or unusual ways; you value freedom over material security and resist financial norms.",
+  "A brilliant, original, lightning-quick mind. You think in unexpected leaps and challenge conventional ideas; drawn to technology, the new, and the radical.",
+  "An unconventional home and family life — frequent moves, unusual roots, or a break from tradition. You need freedom in your private world.",
+  "Wildly original creativity and unconventional romance. You express yourself in unexpected ways and rebel against traditional love; drawn to the unusual.",
+  "An inventive, unconventional approach to work and health. You resist routine and may change jobs suddenly; drawn to innovative or freelance paths.",
+  "Unconventional partnerships — you need freedom within closeness. Relationships may begin or end suddenly; drawn to unusual or non-traditional unions.",
+  "A radical relationship to intimacy, shared resources, and transformation. Sudden upheavals around money or bonds; you rebel against conventional taboos.",
+  "Revolutionary beliefs and a hunger for radical truth. Your worldview is original and freedom-loving; drawn to unconventional travel and unorthodox philosophy.",
+  "An unconventional, trailblazing career. You may change paths suddenly or work in innovative fields; you rebel against hierarchy and forge your own way up.",
+  "Uranus's natural home — a visionary in community and friendship. Drawn to progressive groups and radical ideals; your hopes for the future are original.",
+  "A subtle, intuitive rebellion in the hidden realms. Flashes of unconventional insight; you may break free from unconscious patterns in sudden, liberating ways."],
+ Neptune:["A dreamy, elusive, impressionable presence — others project onto you. Your sense of self can be fluid; charismatic but hard to pin down.",
+  "Idealistic or confused relationship to money. You may not value material things, or chase dreams over security; intuition about resources, but watch for illusion.",
+  "An imaginative, poetic mind that thinks in images and intuition. Logic blurs into dream; gifted for art and inspiration, but facts can get slippery.",
+  "A dreamy, idealized, or unclear home life. You long for a perfect sanctuary; deep psychic ties to family and the past, sometimes with confusion or sacrifice.",
+  "Boundless creative imagination and idealized romance. You're drawn to fantasy in love and art; inspired and compassionate, but prone to rose-tinted illusions.",
+  "You serve with compassion and may sacrifice in work. Drawn to healing, caregiving, or creative work; boundaries blur, so guard against being drained.",
+  "Idealized, compassionate partnerships — you may see partners as you wish them to be. Capable of selfless love, but watch for illusion and sacrifice in relationships.",
+  "Profound psychic sensitivity to intimacy and the unseen. Mystical experiences around merging, death, and shared resources; deep but boundary-dissolving bonds.",
+  "A mystical, spiritual search for meaning. Drawn to the transcendent, faraway places, and faith; your beliefs are inspired but can drift into idealism.",
+  "A dreamy or idealized career, often in creative, spiritual, or helping fields. Your public image is fluid; you may chase a calling more than a concrete goal.",
+  "Idealistic hopes and dreams for humanity. Drawn to compassionate groups and utopian visions; your friendships are inspired but sometimes disillusioning.",
+  "Neptune's natural home — profound spiritual sensitivity and compassion. Deeply intuitive, drawn to solitude, the mystical, and surrender; the boundary between self and all dissolves."],
+ Pluto:["An intense, magnetic, powerful presence — you transform throughout life, sometimes reinventing yourself completely. Others feel your depth and force.",
+  "Deep transformation around money, value, and self-worth. Power struggles or profound rebirths through resources; you can build and lose and rebuild wealth.",
+  "A penetrating, obsessive, powerful mind. You think deeply and can fixate; your words carry weight and the power to transform — drawn to hidden knowledge.",
+  "Profound transformation rooted in home and family. Intense, sometimes difficult roots; you may break ancestral patterns and rebuild your foundations from the ground up.",
+  "Intense, all-consuming creativity and romance. Passionate, transformative love affairs; your self-expression carries deep power, and creation is a form of rebirth.",
+  "Transformation through work and health. Obsessive, powerful focus on your craft; deep changes through your job, and the body as a site of profound regeneration.",
+  "Intense, transformative, sometimes power-charged partnerships. Relationships change you at the core; drawn to profound, all-or-nothing bonds that remake you.",
+  "Pluto's natural home — profound power around intimacy, death, shared resources, and rebirth. You're drawn to the taboo and transformative; crisis is your forge.",
+  "A relentless search for ultimate truth. Your beliefs transform radically over life; drawn to the hidden depths of philosophy, and travel can be life-changing.",
+  "Intense drive for power and transformation in career. You may rise to great influence, reinvent your public role entirely, and wield real authority.",
+  "Transformative power through groups and shared vision. Intense involvement in community; you may lead movements or experience profound change through your networks.",
+  "Deep, hidden power working through the unconscious. Profound psychological transformation in solitude; you confront buried forces and are reborn from within."],
+};
 function planetInHouse(planet,houseNum){
+  const arr=PIH[planet];
+  if(arr&&arr[houseNum-1])return arr[houseNum-1];
   const h=HOUSES[houseNum-1];
-  const role={Sun:"your core identity and vitality pour into",Moon:"your emotional needs and instincts center on",Mercury:"your mind and voice are most active in",Venus:"your capacity for love, beauty, and pleasure flows into",Mars:"your drive and assertion fire up in",Jupiter:"growth, luck, and abundance expand through",Saturn:"your discipline, lessons, and lasting structures form around",Uranus:"your need for freedom and originality electrifies",Neptune:"your imagination, longing, and spiritual sensitivity dissolve into",Pluto:"deep transformation and power work through"};
-  return `${role[planet]||"this planet works through"} the area of ${h.name.toLowerCase()} — ${h.theme}.`;
+  return `${planet} works through the area of ${h.name.toLowerCase()} — ${h.theme}.`;
 }
 
 /* ============ IN-DEPTH NATAL REPORT (original prose, Cafe-style structure) ============ */
@@ -1122,6 +1294,16 @@ $("pcorner-natal").addEventListener("click",openProfileMenu);
 $("pmenu-close").addEventListener("click",closeProfileMenu);
 $("pmenu").addEventListener("click",e=>{if(e.target.id==="pmenu")closeProfileMenu();});
 $("pmenu-add").addEventListener("click",()=>{closeProfileMenu();startNewProfile();});
+// day navigation
+function goDay(delta){const nv=dayOffset+delta;if(nv<-7||nv>7)return;dayOffset=nv;renderDash();}
+$("day-prev").addEventListener("click",()=>goDay(-1));
+$("day-next").addEventListener("click",()=>goDay(1));
+$("journal-save").addEventListener("click",saveJournal);
+// swipe left/right on the Today view to change days
+(function(){let x0=null,y0=null;const t=$("view-today");if(!t)return;
+  t.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});
+  t.addEventListener("touchend",e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){goDay(dx<0?1:-1);}x0=null;});
+})();
 $("onboard-back").addEventListener("click",()=>{
   // restore the active profile and go back to it; if none, go to dash
   profile=profiles.find(p=>p.id===activeId)||profiles[0]||null;
