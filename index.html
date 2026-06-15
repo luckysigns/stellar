@@ -145,6 +145,14 @@
     <header><div class="mark">✦ Stellar ✦</div><h1>Your sky,<br>today</h1>
       <div class="tag">A daily reading drawn from your real birth chart</div></header>
     <div class="card">
+      <div class="label">Add a chart from a link</div>
+      <p class="dim" style="font-size:13px;margin:8px 0 8px">Someone shared their chart with you? Paste their link here.</p>
+      <input id="i-link" type="text" placeholder="Paste a Stellar chart link…" autocomplete="off">
+      <button class="btn ghost" id="import-link" style="margin-top:10px">Import chart →</button>
+      <div class="err hide" id="link-err"></div>
+    </div>
+    <div class="between"><span class="label">or enter birth details</span></div>
+    <div class="card">
       <div class="label">Step one · your birth</div>
       <p class="dim" style="font-size:14px;margin:10px 0 4px">Entered once. The sky does the rest.</p>
       <div class="field"><label>Your name</label><input id="i-name" type="text" placeholder="Lachlan" autocomplete="off"></div>
@@ -258,7 +266,7 @@
       <div class="topbar-right"><button class="linkbtn" id="view-chart">view full chart</button><button class="pcorner" id="pcorner-dash"></button></div></div>
     <div class="datehead" id="datehead">
       <button class="day-nav" id="day-prev" aria-label="Previous day">‹</button>
-      <div style="flex:1"><div class="label" id="greeting">Good morning</div><div class="d" id="today-date"></div></div>
+      <div style="flex:1"><div class="label" id="greeting">Good morning</div><div class="d" id="today-date"></div><div class="dim" id="dash-profile-name" style="font-size:13px;margin-top:2px"></div></div>
       <button class="day-nav" id="day-next" aria-label="Next day">›</button>
     </div>
     <div class="tabs">
@@ -267,11 +275,7 @@
     </div>
 
     <div id="view-today">
-      <div class="card"><div class="label">Your natal chart</div>
-        <div class="wheelwrap"><svg class="wheel" id="wheel" viewBox="0 0 400 400"></svg></div>
-        <div id="natal-summary" class="dim" style="font-size:13px;text-align:center"></div></div>
-      <div class="between"><span class="label">Today's sky</span></div>
-      <div class="card"><div class="skyrow" id="sky-chips"></div></div>
+      <!-- today's sky chart, first -->
       <div class="between"><span class="label">The sky right now</span></div>
       <div class="card">
         <div class="wheelwrap"><svg class="wheel" id="now-wheel" viewBox="0 0 400 400"></svg></div>
@@ -286,22 +290,28 @@
           <div id="now-ac" class="ac hide"></div>
           <div id="now-ac-status" class="ac-status hide"></div>
         </div>
+        <div class="skyrow" id="sky-chips" style="margin-top:14px"></div>
       </div>
-      <div id="events-section" class="hide">
-        <div class="between"><span class="label">Notable now</span></div>
-        <div class="card"><div id="events-list"></div></div>
-      </div>
-      <div class="between"><span class="label">What's touching your chart</span></div>
-      <div class="card"><div id="transit-list"></div>
-        <div id="no-transits" class="dim hide" style="font-size:14px">A quiet day — no major transits within orb. The reading reflects the prevailing mood of the sky.</div></div>
-      <div class="between"><span class="label">Lucky windows today</span></div>
-      <div class="card"><div id="lucky-tznote" class="dim" style="font-size:12px;margin-bottom:10px"></div><div id="lucky-list"><div class="loading dotpulse">Finding your windows</div></div></div>
+
+      <!-- the day's reading & guidance, before the technical detail -->
       <div class="between"><span class="label">Your reading</span></div>
       <div class="card"><div id="reading" class="reading"><div class="loading dotpulse">Reading the sky for you</div></div>
         <div class="err hide" id="reading-err"></div>
         <button class="btn ghost hide" id="reroll" style="margin-top:18px">Draw the reading again</button></div>
+      <div id="events-section" class="hide">
+        <div class="between"><span class="label">Notable now</span></div>
+        <div class="card"><div id="events-list"></div></div>
+      </div>
       <div class="between"><span class="label">Make the most of today</span></div>
       <div class="card"><div id="lifestyle-body"></div></div>
+      <div class="between"><span class="label">Lucky windows today</span></div>
+      <div class="card"><div id="lucky-tznote" class="dim" style="font-size:12px;margin-bottom:10px"></div><div id="lucky-list"><div class="loading dotpulse">Finding your windows</div></div></div>
+
+      <!-- technical detail, lower down -->
+      <div class="between"><span class="label">What's touching your chart</span></div>
+      <div class="card"><div id="transit-list"></div>
+        <div id="no-transits" class="dim hide" style="font-size:14px">A quiet day — no major transits within orb. The reading reflects the prevailing mood of the sky.</div></div>
+
       <div class="between"><span class="label">Journal</span><span class="dim" id="journal-date" style="font-size:12px"></span></div>
       <div class="card">
         <textarea id="journal-text" placeholder="How did this day feel? Notes, dreams, what happened…" rows="5"></textarea>
@@ -624,7 +634,6 @@ function showNatal(){
   if(!window.Astronomy){$("natal-reading").innerHTML=`<div class="err">Couldn't load the ephemeris library. Reload to try again.</div>`;return;}
   computeChartData();
   $("natal-hello").textContent=profile.name?`Welcome, ${profile.name}`:"Welcome";
-  drawWheel(cachedNatal,cachedAngles);
   drawWheelInto("natal-wheel",cachedNatal,cachedAngles);
   $("natal-summary2").innerHTML=natalSummaryHtml();
   $("indepth-section").classList.add("hide");$("indepth-btn").classList.remove("hide");
@@ -688,14 +697,20 @@ function renderDash(){
   $("greeting").textContent=isToday?(hr<12?"Good morning":hr<18?"Good afternoon":"Good evening"):(dayOffset===1?"Tomorrow":dayOffset===-1?"Yesterday":dayOffset>0?`In ${dayOffset} days`:`${-dayOffset} days ago`);
   $("today-date").textContent=now.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
   computeChartData();cachedTransit=computeChart(now);cachedAspects=findAspects(cachedNatal,cachedTransit);
-  drawWheel(cachedNatal,cachedAngles);
-  $("natal-summary").innerHTML=natalSummaryHtml();
+  $("dash-profile-name").textContent=profile&&profile.name?`${profile.name}'s sky`:"";
   $("sky-chips").innerHTML=PLANETS.map(p=>{if(cachedTransit[p.key]==null)return"";const s=signFromLon(cachedTransit[p.key]);return `<span class="chip">${p.glyph} <b>${p.key}</b> ${s.degInSign.toFixed(0)}° ${s.sign}</span>`;}).join("");
   cachedEvents=notableEvents(now);
   renderEvents(cachedEvents);
   // nav arrows state
   $("day-prev").classList.toggle("disabled",dayOffset<=-7);
   $("day-next").classList.toggle("disabled",dayOffset>=7);
+  // Today tab: highlighted only when actually on today; label hints to return
+  const todayTab=document.querySelector('.tab[data-view="today"]');
+  if(todayTab){
+    const onTodayView=!$("view-today").classList.contains("hide");
+    todayTab.classList.toggle("active",onTodayView&&dayOffset===0);
+    todayTab.textContent=dayOffset===0?"Today":"↩ Today";
+  }
   if(!cachedAspects.length){$("transit-list").classList.add("hide");$("no-transits").classList.remove("hide");}
   else{$("no-transits").classList.add("hide");$("transit-list").classList.remove("hide");$("transit-list").innerHTML=cachedAspects.map(a=>`<div class="transit"><div class="asp">${planetGlyph(a.transiting)}${a.aspect.glyph}${planetGlyph(a.natal)}</div><div class="desc">Transiting <b>${a.transiting}</b> ${a.aspect.name} your natal <b>${a.natal}</b><small>orb ${a.orb.toFixed(1)}°${a.exact?" · exact":""} · ${a.aspect.tone}</small></div></div>`).join("");}
   computeLuckyWindows(now);fetchReading();
@@ -1310,6 +1325,20 @@ $("onboard-back").addEventListener("click",()=>{
   if(profile){activeId=profile.id;if(profile.lat!=null)showNatal();else showOnboard();}
   else showOnboard();
 });
+$("import-link").addEventListener("click",()=>{
+  const raw=$("i-link").value.trim();const err=$("link-err");err.classList.add("hide");
+  if(!raw){err.textContent="Paste a chart link first.";err.classList.remove("hide");return;}
+  // accept a full URL with #chart=... or a bare code
+  let code=raw;const m=raw.match(/chart=([^&\s]+)/);if(m)code=m[1];
+  const inc=decodeProfile(code);
+  if(!inc||!inc.date||inc.lat==null){err.textContent="That doesn't look like a valid Stellar chart link.";err.classList.remove("hide");return;}
+  // avoid exact duplicates
+  const dup=profiles.find(p=>p.date===inc.date&&p.time===inc.time&&Math.abs((p.lat||0)-(inc.lat||0))<0.01);
+  if(dup){activeId=dup.id;profile=dup;persistProfiles();showNatal();return;}
+  inc.id=newId();profiles.push(inc);activeId=inc.id;profile=inc;persistProfiles();
+  $("i-link").value="";
+  showNatal();
+});
 $("to-today").addEventListener("click",showDash);
 $("view-chart").addEventListener("click",showNatal);
 $("indepth-btn").addEventListener("click",()=>{try{renderInDepthReport();$("indepth-section").classList.remove("hide");$("indepth-btn").classList.add("hide");$("indepth-section").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){$("indepth-body").innerHTML=`<p class="dim">Couldn't build the in-depth view.</p>`;$("indepth-section").classList.remove("hide");}});
@@ -1358,7 +1387,7 @@ $("now-place").addEventListener("input",e=>{
   },320);
 });
 $("reroll").addEventListener("click",fetchReading);
-document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");const v=t.dataset.view;$("view-today").classList.toggle("hide",v!=="today");$("view-month").classList.toggle("hide",v!=="month");if(v==="month"&&!monthRendered){renderMonth();monthRendered=true;}}));
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{const v=t.dataset.view;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");$("view-today").classList.toggle("hide",v!=="today");$("view-month").classList.toggle("hide",v!=="month");if(v==="today"){if(dayOffset!==0){dayOffset=0;renderDash();}}else if(v==="month"&&!monthRendered){renderMonth();monthRendered=true;}}));
 loadProfile();
 window.addEventListener("load",()=>{
   populateDateTime();loadNowLoc();
