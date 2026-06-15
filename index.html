@@ -62,6 +62,15 @@
   .lucky .why{font-size:14px;color:var(--star)}
   .lucky .why small{display:block;color:var(--dim);font-size:12px;margin-top:2px}
   .lucky .star{color:var(--gold);letter-spacing:1px;font-size:12px}
+  .ls{display:flex;gap:13px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;line-height:1.55;color:var(--dim)}
+  .ls:last-child{border:none}
+  .ls b{color:var(--gold);font-weight:600;margin-right:4px}
+  .ls-icon{flex:0 0 22px;text-align:center;font-size:16px}
+  .profile-bar{display:flex;gap:8px;flex-wrap:wrap;padding:4px 0 2px}
+  .pchip{background:#0c1120;border:1px solid var(--line);color:var(--dim);font:inherit;font-size:13px;padding:7px 14px;border-radius:999px;cursor:pointer;transition:all .15s}
+  .pchip:hover{border-color:var(--gold)}
+  .pchip.active{background:rgba(232,201,122,.13);border-color:var(--gold);color:var(--star)}
+  .pchip-add{color:var(--teal);border-style:dashed}
   .win .peak{display:block;color:var(--teal);font-size:11px;font-weight:600;margin-top:2px;letter-spacing:0}
   .lucky-day{cursor:pointer;border-radius:10px;transition:background .15s}
   .lucky-day:hover{background:rgba(255,255,255,.03)}
@@ -159,6 +168,7 @@
   <section id="natal" class="hide">
     <div class="topbar"><div class="mark" style="margin:0">✦ Stellar</div>
       <button class="linkbtn" id="natal-edit">edit birth details</button></div>
+    <div id="profile-bar" class="profile-bar"></div>
     <header style="padding:18px 0 6px">
       <div class="label" id="natal-hello" style="text-align:center"></div>
       <h1 style="font-size:clamp(32px,9vw,52px)">Your chart</h1>
@@ -183,6 +193,21 @@
       <div class="card">
         <p class="dim" style="font-size:13px;margin-bottom:6px">The standout fortunate windows ahead, when Jupiter — the planet of luck and expansion — lights up your chart.</p>
         <div id="lifeluck-body"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="between"><span class="label">Share & compare</span></div>
+      <button class="btn ghost" id="share-chart" style="margin-top:4px">Share this chart 🔗</button>
+      <div id="share-result" class="hide" style="margin-top:10px"></div>
+      <div id="syn-controls" class="hide" style="margin-top:16px">
+        <div class="label" style="margin-bottom:8px">Relationship between two charts</div>
+        <div class="dtrow">
+          <select id="syn-a" class="dtsel"></select>
+          <select id="syn-b" class="dtsel"></select>
+        </div>
+        <button class="btn ghost" id="syn-go" style="margin-top:10px">Compare →</button>
+        <div id="syn-body" style="margin-top:12px"></div>
       </div>
     </div>
 
@@ -247,6 +272,8 @@
       <div class="card"><div id="reading" class="reading"><div class="loading dotpulse">Reading the sky for you</div></div>
         <div class="err hide" id="reading-err"></div>
         <button class="btn ghost hide" id="reroll" style="margin-top:18px">Draw the reading again</button></div>
+      <div class="between"><span class="label">Make the most of today</span></div>
+      <div class="card"><div id="lifestyle-body"></div></div>
     </div>
 
     <div id="view-month" class="hide">
@@ -456,7 +483,33 @@ function renderEvents(ev){
   $("events-section").classList.remove("hide");
   $("events-list").innerHTML=items.map(i=>`<div class="ev ${i.cls}"><span class="ev-icon">${i.icon}</span><span>${i.text}</span></div>`).join("");
 }
-function loadProfile(){try{const r=localStorage.getItem("stellar.profile");if(r)profile=JSON.parse(r);}catch(e){}}
+/* ============ MULTI-PROFILE STORAGE ============ */
+let profiles=[];      // array of profile objects, each with an id
+let activeId=null;    // id of the currently selected profile
+function newId(){return "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function loadProfile(){
+  try{
+    const arr=localStorage.getItem("stellar.profiles");
+    if(arr){profiles=JSON.parse(arr);activeId=localStorage.getItem("stellar.activeId");}
+    else{ // migrate the old single profile, if any
+      const old=localStorage.getItem("stellar.profile");
+      if(old){const p=JSON.parse(old);p.id=newId();profiles=[p];activeId=p.id;persistProfiles();}
+    }
+  }catch(e){}
+  // resolve active profile into the global `profile`
+  profile=profiles.find(p=>p.id===activeId)||profiles[0]||null;
+  if(profile)activeId=profile.id;
+}
+function persistProfiles(){try{localStorage.setItem("stellar.profiles",JSON.stringify(profiles));localStorage.setItem("stellar.activeId",activeId||"");}catch(e){}}
+function saveProfile(p){
+  // update existing active profile, or add a new one
+  if(p.id&&profiles.some(x=>x.id===p.id)){profiles=profiles.map(x=>x.id===p.id?p:x);}
+  else{p.id=p.id||newId();profiles.push(p);}
+  activeId=p.id;profile=p;persistProfiles();
+}
+function switchProfile(id){const p=profiles.find(x=>x.id===id);if(!p)return;activeId=id;profile=p;persistProfiles();showNatal();}
+function deleteProfile(id){profiles=profiles.filter(x=>x.id!==id);if(activeId===id){profile=profiles[0]||null;activeId=profile?profile.id:null;}persistProfiles();}
+function startNewProfile(){profile=null;chosenPlace=null;$("i-name").value="";setDateTime("","");$("i-place").value="";$("place-set").classList.add("hide");showOnboard();}
 /* ---- date/time scroll selectors ---- */
 const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
 function populateDateTime(){
@@ -486,7 +539,7 @@ function setDateTime(dateStr,timeStr){
   if(dateStr){const[y,m,d]=dateStr.split("-");$("i-year").value=+y;$("i-month").value=+m;$("i-day").value=+d;}
   if(timeStr){let[H,M]=timeStr.split(":").map(Number);const ap=H>=12?"PM":"AM";let h12=H%12;if(h12===0)h12=12;$("i-hour").value=h12;$("i-min").value=M;$("i-ampm").value=ap;}
 }
-function saveProfile(p){profile=p;try{localStorage.setItem("stellar.profile",JSON.stringify(p));}catch(e){}}
+function saveProfileOLD_removed(){}
 function buildBirthDate(p){const[Y,M,D]=p.date.split("-").map(Number);const t=p.time||"12:00";const[h,mi]=t.split(":").map(Number);const off=(typeof p.tzOffset==="number")?p.tzOffset:0;return new Date(Date.UTC(Y,M-1,D,h-off,mi,0));}
 
 let acItems=[],acActive=-1,acTimer=null,chosenPlace=null;
@@ -530,7 +583,29 @@ function showNatal(){
   drawWheelInto("natal-wheel",cachedNatal,cachedAngles);
   $("natal-summary2").innerHTML=natalSummaryHtml();
   $("indepth-section").classList.add("hide");$("indepth-btn").classList.remove("hide");
+  renderProfileBar();
+  setupShareSynastry();
   fetchNatalReading();
+}
+function setupShareSynastry(){
+  if(profiles.length>=2){
+    $("syn-controls").classList.remove("hide");
+    const opts=profiles.map(p=>`<option value="${p.id}">${escapeHtml(p.name||"Unnamed")}</option>`).join("");
+    $("syn-a").innerHTML=opts;$("syn-b").innerHTML=opts;
+    $("syn-a").value=activeId;
+    const other=profiles.find(p=>p.id!==activeId);if(other)$("syn-b").value=other.id;
+  }else{$("syn-controls").classList.add("hide");}
+  $("share-result").classList.add("hide");
+}
+function renderProfileBar(){
+  const bar=$("profile-bar");if(!bar)return;
+  if(profiles.length<=1&&profile){
+    bar.innerHTML=`<button class="pchip pchip-add" id="pb-add">+ add a chart</button>`;
+  }else{
+    bar.innerHTML=profiles.map(p=>`<button class="pchip ${p.id===activeId?'active':''}" data-pid="${p.id}">${escapeHtml(p.name||"Unnamed")}</button>`).join("")+`<button class="pchip pchip-add" id="pb-add">+ add</button>`;
+    bar.querySelectorAll(".pchip[data-pid]").forEach(el=>el.addEventListener("click",()=>{if(el.dataset.pid!==activeId)switchProfile(el.dataset.pid);}));
+  }
+  const add=$("pb-add");if(add)add.addEventListener("click",startNewProfile);
 }
 function showDash(){$("onboard").classList.add("hide");$("natal").classList.add("hide");$("dash").classList.remove("hide");monthRendered=false;renderDash();}
 function showOnboard(){$("dash").classList.add("hide");$("natal").classList.add("hide");$("onboard").classList.remove("hide");populateDateTime();if(profile){$("i-name").value=profile.name||"";setDateTime(profile.date||"",profile.time||"");if(profile.placeName){$("i-place").value=profile.placeName;chosenPlace={name:profile.placeName,lat:profile.lat,lng:profile.lng,tz:profile.tz,tzOffset:profile.tzOffset};$("place-set").textContent=`✓ ${profile.lat.toFixed(2)}, ${profile.lng.toFixed(2)} · ${profile.tz||"UTC"}`;$("place-set").classList.remove("hide");}}}
@@ -799,6 +874,105 @@ const TRANSIT_FLAVOR={
 };
 function transitFlavor(t,type){const e=TRANSIT_FLAVOR[t];return (e&&e[type])?e[type]:"touching your chart";}
 
+/* ============ DAILY LIFESTYLE GUIDANCE ============
+   Foods, movement, and activities tuned to the dominant energy of the day.
+   Keyed by the element of the Moon's sign (the day's emotional tone) and the
+   driving transit planet. All standard astrological correspondences. */
+const ELEMENT_OF={Aries:"fire",Leo:"fire",Sagittarius:"fire",Taurus:"earth",Virgo:"earth",Capricorn:"earth",Gemini:"air",Libra:"air",Aquarius:"air",Cancer:"water",Scorpio:"water",Pisces:"water"};
+const LIFESTYLE={
+  fire:{
+    mood:"energized and bold",
+    eat:"warming, spiced foods — ginger, chili, roasted vegetables, a good cup of coffee or cacao. Eat with gusto.",
+    move:"do something vigorous: a fast walk, a workout, dancing. Burn the excess spark so it doesn't turn to irritability.",
+    do:"start the thing you've been putting off. Initiative is rewarded today — be first, be brave, take the lead.",
+  },
+  earth:{
+    mood:"grounded and practical",
+    eat:"rooted, nourishing food — root vegetables, whole grains, hearty soups, dark chocolate. Slow, real meals.",
+    move:"get into your body and the natural world: a walk outside, gardening, stretching, anything tactile and unhurried.",
+    do:"handle the practical and tangible — finances, tidying, a task you can finish and see. Build something real.",
+  },
+  air:{
+    mood:"social and mentally quick",
+    eat:"light, fresh food — salads, fruit, herbal tea, something that doesn't weigh you down while your mind is busy.",
+    move:"keep it light and varied: a stroll-and-talk, light cardio, breathwork. Movement that keeps the mind clear.",
+    do:"connect and communicate — calls, messages, writing, learning. A good day to pitch, share ideas, and be social.",
+  },
+  water:{
+    mood:"intuitive and tender",
+    eat:"soothing, hydrating food — soups, teas, fish, juicy fruit. Warm drinks. Be gentle with yourself.",
+    move:"soft and flowing — yoga, swimming, a slow walk near water, rest. Let the body lead, not the schedule.",
+    do:"tend to feelings and close bonds — journal, create, rest, reach out to someone you love. Protect your sensitivity.",
+  },
+};
+function lifestyleForDay(){
+  // dominant element = Moon sign's element (the day's emotional weather)
+  const moonSign=signFromLon(cachedTransit.Moon).sign;
+  const el=ELEMENT_OF[moonSign]||"earth";
+  const g=LIFESTYLE[el];
+  return {el,moonSign,...g};
+}
+
+/* ============ SYNASTRY (relationship between two charts) ============ */
+const SYNASTRY_ASPECTS={
+  "Sun-Sun":{trine:"an easy, natural recognition — you 'get' each other's core",conjunction:"a powerful sense of being the same kind of person",sextile:"a comfortable, supportive rapport",square:"egos that spark and challenge each other to grow",opposition:"a magnetic opposites-attract pull"},
+  "Sun-Moon":{trine:"one of the warmest bonds — heart and identity in harmony",conjunction:"a deep, instinctive care between you",sextile:"natural emotional support",square:"a tug between what one needs and what the other is",opposition:"a classic attraction of complementary natures"},
+  "Moon-Moon":{trine:"you feel safe and understood together",conjunction:"emotional instincts that mirror each other",sextile:"easy emotional rhythm",square:"different emotional languages to learn",opposition:"you balance each other's moods"},
+  "Venus-Mars":{trine:"strong, easy chemistry and attraction",conjunction:"powerful romantic and physical magnetism",sextile:"a flirtatious, warm spark",square:"hot, sometimes friction-filled attraction",opposition:"undeniable opposites-attract desire"},
+  "Venus-Venus":{trine:"you love and enjoy life in the same way",conjunction:"shared tastes and affection",sextile:"easy pleasure in each other's company",square:"different love languages",opposition:"complementary styles of affection"},
+  "Sun-Venus":{trine:"affection flows easily; you delight in each other",conjunction:"a sweet, warm fondness",sextile:"natural enjoyment together",square:"differing values to navigate",opposition:"attraction across difference"},
+  "Mars-Mars":{trine:"you act and pursue in sync",conjunction:"shared drive — powerful together or competitive",sextile:"good teamwork energy",square:"clashing methods that need patience",opposition:"you push against each other"},
+  "Sun-Saturn":{trine:"a stabilizing, committed bond",conjunction:"a serious, lasting, sometimes heavy connection",sextile:"steady support",square:"one may feel limited by the other",opposition:"a karmic, responsibility-tinged tie"},
+};
+function synastryText(a,b,type){const e=SYNASTRY_ASPECTS[`${a}-${b}`]||SYNASTRY_ASPECTS[`${b}-${a}`];return (e&&e[type])?e[type]:"";}
+function computeSynastry(chartA,chartB){
+  const keyP=["Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn"];
+  const hits=[];
+  for(const pa of keyP)for(const pb of keyP){
+    if(chartA[pa]==null||chartB[pb]==null)continue;
+    let diff=Math.abs(chartA[pa]-chartB[pb])%360;if(diff>180)diff=360-diff;
+    for(const asp of ASPECTS){
+      const orb=Math.abs(diff-asp.angle);
+      const useOrb=(asp.name==="conjunction"||asp.name==="opposition")?8:6;
+      if(orb<=useOrb){hits.push({a:pa,b:pb,aspect:asp,orb,score:(asp.luck||0)});break;}
+    }
+  }
+  hits.sort((x,y)=>x.orb-y.orb);
+  return hits;
+}
+function renderSynastry(idA,idB){
+  const pA=profiles.find(p=>p.id===idA),pB=profiles.find(p=>p.id===idB);
+  if(!pA||!pB){$("syn-body").innerHTML=`<p class="dim">Pick two charts to compare.</p>`;return;}
+  const cA=computeChart(buildBirthDate(pA)),cB=computeChart(buildBirthDate(pB));
+  const hits=computeSynastry(cA,cB);
+  const pos=hits.filter(h=>h.score>0).length,neg=hits.filter(h=>h.score<0).length;
+  const overall=pos>neg+2?"a warm, flowing connection with real ease between you":neg>pos+2?"a charged, growth-driven connection with friction that keeps things alive":"a balanced mix of ease and spark";
+  let html=`<p class="dim" style="font-size:14px;margin-bottom:12px"><b style="color:var(--star)">${escapeHtml(pA.name||"Chart A")}</b> & <b style="color:var(--star)">${escapeHtml(pB.name||"Chart B")}</b> share ${overall}.</p>`;
+  const named=hits.map(h=>{const t=synastryText(h.a,h.b,h.aspect.name);return t?{...h,text:t}:null;}).filter(Boolean).slice(0,8);
+  if(!named.length)html+=`<p class="dim" style="font-size:14px">No standout cross-aspects between the major planets — a quieter, more independent pairing.</p>`;
+  else html+=named.map(h=>{const strength=h.orb<2?"strong":h.orb<5?"notable":"subtle";const an=pA.name?pA.name.split(" ")[0]+"'s ":"";const bn=pB.name?pB.name.split(" ")[0]+"'s ":"";return `<div class="ir-item"><div class="h">${planetGlyph(h.a)} ${an}${h.a} ${h.aspect.name} ${bn}${h.b} ${planetGlyph(h.b)}</div><div class="b">${h.text.charAt(0).toUpperCase()+h.text.slice(1)}. <span class="em">(${strength})</span></div></div>`;}).join("");
+  $("syn-body").innerHTML=html;
+}
+
+/* ============ SHAREABLE CHART LINKS (no backend — data packed in URL) ============ */
+let pendingShared=null;
+function encodeProfile(p){
+  const slim={n:p.name||"",d:p.date,t:p.time||"",la:p.lat,lo:p.lng,tz:p.tz||"",to:p.tzOffset||0,pn:p.placeName||""};
+  return btoa(encodeURIComponent(JSON.stringify(slim)));
+}
+function decodeProfile(code){
+  try{const s=JSON.parse(decodeURIComponent(atob(code)));return {name:s.n,date:s.d,time:s.t,lat:s.la,lng:s.lo,tz:s.tz,tzOffset:s.to,placeName:s.pn};}catch(e){return null;}
+}
+function shareLink(p){const base=location.origin+location.pathname;return `${base}#chart=${encodeProfile(p)}`;}
+function checkSharedChart(){
+  const m=location.hash.match(/chart=([^&]+)/);
+  if(!m)return false;
+  const incoming=decodeProfile(m[1]);
+  if(!incoming||!incoming.date)return false;
+  pendingShared=incoming;
+  return true;
+}
+
 /* ============ NATAL READING (assembled, no API) ============ */
 function renderNatalReadingOffline(){
   const name=profile.name||"";const you=name?name:"You";
@@ -871,6 +1045,15 @@ function renderDailyReadingOffline(){
   }
   $("reading").innerHTML=paras.map((p,i)=>`<p${i===0?' class="lead"':''}>${escapeHtml(p)}</p>`).join("");
   $("reroll").classList.add("hide");
+  // lifestyle guidance for the day
+  try{
+    const ls=lifestyleForDay();
+    $("lifestyle-body").innerHTML=
+      `<p class="dim" style="font-size:13px;margin-bottom:14px">The Moon is in ${ls.moonSign} today, giving the day a <span style="color:var(--star)">${ls.el}</span> tone — ${ls.mood}. Lean into it:</p>`+
+      `<div class="ls"><span class="ls-icon">🍴</span><div><b>Eat</b> ${ls.eat}</div></div>`+
+      `<div class="ls"><span class="ls-icon">🏃</span><div><b>Move</b> ${ls.move}</div></div>`+
+      `<div class="ls"><span class="ls-icon">✦</span><div><b>Do</b> ${ls.do}</div></div>`;
+  }catch(e){$("lifestyle-body").innerHTML="";}
 }
 function fetchReading(){ $("reading-err").classList.add("hide"); try{renderDailyReadingOffline();}catch(e){$("reading").innerHTML=`<p>Your chart and lucky windows are shown above.</p>`;} }
 
@@ -889,6 +1072,15 @@ $("natal-edit").addEventListener("click",showOnboard);
 $("to-today").addEventListener("click",showDash);
 $("view-chart").addEventListener("click",showNatal);
 $("indepth-btn").addEventListener("click",()=>{try{renderInDepthReport();$("indepth-section").classList.remove("hide");$("indepth-btn").classList.add("hide");$("indepth-section").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){$("indepth-body").innerHTML=`<p class="dim">Couldn't build the in-depth view.</p>`;$("indepth-section").classList.remove("hide");}});
+$("share-chart").addEventListener("click",async()=>{
+  if(!profile)return;
+  const link=shareLink(profile);
+  const box=$("share-result");box.classList.remove("hide");
+  box.innerHTML=`<p class="dim" style="font-size:13px;margin-bottom:6px">Anyone who opens this link can save ${escapeHtml(profile.name||"this chart")} to their Stellar:</p><input id="share-input" type="text" readonly value="${link}" style="font-size:12px"><button class="linkbtn" id="share-copy" style="margin-top:6px;color:var(--teal)">Copy link</button>`;
+  const inp=$("share-input");inp.focus();inp.select();
+  $("share-copy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(link);$("share-copy").textContent="Copied ✓";}catch(e){inp.select();document.execCommand&&document.execCommand("copy");$("share-copy").textContent="Copied ✓";}});
+});
+$("syn-go").addEventListener("click",()=>{const a=$("syn-a").value,b=$("syn-b").value;if(a===b){$("syn-body").innerHTML=`<p class="dim" style="font-size:14px">Pick two different charts to compare.</p>`;return;}renderSynastry(a,b);});
 
 /* sky-now location controls */
 $("now-detect").addEventListener("click",()=>{
@@ -927,7 +1119,18 @@ $("now-place").addEventListener("input",e=>{
 $("reroll").addEventListener("click",fetchReading);
 document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");const v=t.dataset.view;$("view-today").classList.toggle("hide",v!=="today");$("view-month").classList.toggle("hide",v!=="month");if(v==="month"&&!monthRendered){renderMonth();monthRendered=true;}}));
 loadProfile();
-window.addEventListener("load",()=>{populateDateTime();loadNowLoc();if(profile&&profile.date&&profile.lat!=null)showDash();else showOnboard();});
+window.addEventListener("load",()=>{
+  populateDateTime();loadNowLoc();
+  if(checkSharedChart()){
+    // someone opened a shared chart link — offer to save it
+    const inc=pendingShared;
+    const ok=confirm(`Add ${inc.name||"this shared chart"} to your Stellar?`);
+    if(ok){inc.id=newId();profiles.push(inc);activeId=inc.id;profile=inc;persistProfiles();}
+    history.replaceState(null,"",location.pathname); // clear the hash
+    if(profile){showNatal();return;}
+  }
+  if(profile&&profile.date&&profile.lat!=null)showDash();else showOnboard();
+});
 </script>
 </body>
 </html>
