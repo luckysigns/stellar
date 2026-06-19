@@ -125,6 +125,10 @@
   .relate-name{color:var(--star);font-size:15px;font-weight:600;margin-bottom:3px}
   .relate-day{font-size:14px;color:var(--dim);line-height:1.5}
   .relate-base{font-size:12px;color:var(--dim);opacity:.7;margin-top:4px;font-style:italic}
+  .tdeep{font-size:13.5px;color:var(--dim);line-height:1.55;margin:6px 0 4px}
+  .chip .rx{color:var(--rose);font-weight:700;font-size:11px}
+  .life-return{background:rgba(232,201,122,.08);border-radius:10px;padding-left:8px;padding-right:8px}
+  .life-return .what{color:var(--gold)}
   .win .peak{display:block;color:var(--teal);font-size:11px;font-weight:600;margin-top:2px;letter-spacing:0}
   .lucky-day{cursor:pointer;border-radius:10px;transition:background .15s}
   .lucky-day:hover{background:rgba(255,255,255,.03)}
@@ -742,7 +746,10 @@ function renderDash(){
   $("today-date").textContent=now.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
   computeChartData();cachedTransit=computeChart(now);cachedAspects=findAspects(cachedNatal,cachedTransit);
   $("dash-profile-name").textContent=profile&&profile.name?`${profile.name}'s sky`:"";
-  $("sky-chips").innerHTML=PLANETS.map(p=>{if(cachedTransit[p.key]==null)return"";const s=signFromLon(cachedTransit[p.key]);return `<span class="chip">${p.glyph} <b>${p.key}</b> ${s.degInSign.toFixed(0)}° ${s.sign}</span>`;}).join("");
+  $("sky-chips").innerHTML=PLANETS.map(p=>{if(cachedTransit[p.key]==null)return"";const s=signFromLon(cachedTransit[p.key]);const deg=Math.floor(s.degInSign);const min=Math.floor((s.degInSign-deg)*60);
+    // retrograde check: compare position a day later
+    let rx="";try{const tomorrow=new Date(now.getTime()+86400000);const lon2=eclipticLon(p.key,tomorrow);let d=lon2-cachedTransit[p.key];if(d>180)d-=360;if(d<-180)d+=360;if(d<0&&p.key!=="Moon")rx=' <span class="rx">℞</span>';}catch(e){}
+    return `<span class="chip">${p.glyph} <b>${p.key}</b> ${deg}°${String(min).padStart(2,"0")}′ ${s.sign}${rx}</span>`;}).join("");
   cachedEvents=notableEvents(now);
   renderEvents(cachedEvents);
   renderRelateToday(cachedTransit);
@@ -757,7 +764,7 @@ function renderDash(){
     todayTab.textContent=dayOffset===0?"Today":"↩ Today";
   }
   if(!cachedAspects.length){$("transit-list").classList.add("hide");$("no-transits").classList.remove("hide");}
-  else{$("no-transits").classList.add("hide");$("transit-list").classList.remove("hide");$("transit-list").innerHTML=cachedAspects.map(a=>`<div class="transit"><div class="asp">${planetGlyph(a.transiting)}${a.aspect.glyph}${planetGlyph(a.natal)}</div><div class="desc">Transiting <b>${a.transiting}</b> ${a.aspect.name} your natal <b>${a.natal}</b><small>orb ${a.orb.toFixed(1)}°${a.exact?" · exact":""} · ${a.aspect.tone}</small></div></div>`).join("");}
+  else{$("no-transits").classList.add("hide");$("transit-list").classList.remove("hide");$("transit-list").innerHTML=cachedAspects.map(a=>{const dt=deepTransit(a);const strength=a.orb<1?"very strong":a.orb<3?"strong":a.orb<5?"moderate":"gentle";return `<div class="transit"><div class="asp">${planetGlyph(a.transiting)}${a.aspect.glyph}${planetGlyph(a.natal)}</div><div class="desc">Transiting <b>${a.transiting}</b> ${a.aspect.name} your natal <b>${a.natal}</b><div class="tdeep">${dt.body}</div><small>orb ${a.orb.toFixed(1)}°${a.exact?" · exact":""} · ${strength} · ${a.aspect.tone}</small></div></div>`;}).join("");}
   computeLuckyWindows(now);fetchReading();
   renderSkyNow();
   renderJournal(now);
@@ -796,7 +803,43 @@ function renderSkyNow(){
   $("now-summary").innerHTML=summ;
 }
 
-function aspectFlavor(h){const tr=h.transiting,na=h.natal,a=h.aspect.name;const benefic=PLANET_LUCK[tr]>0||PLANET_LUCK[na]>0;if(na==="MC"&&(tr==="Jupiter"||tr==="Venus"))return tr==="Jupiter"?"Jupiter blesses your Midheaven — a window for visibility, opportunity, and inspired moves toward your calling.":"Venus graces your Midheaven — favor, beauty, and good will flow toward your public life and work.";if(na==="MC")return "Energy gathered at your Midheaven — your direction and public path are activated.";if(na==="Venus"&&(tr==="Jupiter"||tr==="Venus"))return "A transit lights up your natal Venus at the top of your chart — your signature placement for grace, attraction, and career luck is switched on.";if(tr==="Venus"||na==="Venus")return "Warmth for connection, money, and asking for what you want.";if(tr==="Jupiter"||na==="Jupiter")return "An expansive, door-opening window — say yes, reach higher.";if(tr==="Sun")return "Confidence and visibility are with you; put yourself forward.";if(tr==="Mercury")return "Sharp thinking and clean communication — pitch, write, decide.";if(a==="trine")return "Things flow with little resistance; act on the easy thread.";if(a==="sextile")return "A small opening you step toward — initiate.";return benefic?"A supportive pocket of the day.":"A workable, steady window.";}
+function aspectFlavor(h){
+  const tr=h.transiting,na=h.natal,a=h.aspect.name;
+  // figure out which natal house the touched point governs, for specificity
+  const cusps=cachedAngles?cachedAngles.cusps:null;
+  const targetLon=na==="MC"?(cachedAngles?cachedAngles.mc:null):cachedNatal[na];
+  const hn=(cusps&&targetLon!=null)?houseOf(targetLon,cusps):null;
+  const areaName=na==="MC"?"career and public standing":(hn?HOUSES[hn-1].name.toLowerCase():null);
+  const harmonic=(a==="trine"||a==="sextile"||a==="conjunction");
+  const flow=a==="trine"?"flows effortlessly":a==="sextile"?"opens a door":a==="conjunction"?"concentrates power":"builds through tension";
+  // Jupiter and Venus are the luck-bringers — name what they do, specifically
+  if(tr==="Jupiter"){
+    const base=`Transiting Jupiter — the planet of luck and expansion — ${flow} to your natal ${na==="MC"?"Midheaven":na}`;
+    const area=areaName?`, lighting up ${areaName}`:"";
+    const act=na==="MC"?" This is prime time to ask for what you want professionally, launch, or be seen — doors open wider than usual."
+      :na==="Venus"?" Love, money, and social luck are favored — make the call, send the pitch, say yes."
+      :na==="Sun"?" Your confidence and vitality are amplified — put yourself forward boldly."
+      :na==="Mercury"?" Ideas land well and negotiations go your way — pitch, sign, decide."
+      :na==="Moon"?" You feel buoyant and generous — a warm window for connection and asking."
+      :" Fortune favors action here — reach higher than feels comfortable.";
+    return base+area+"."+act;
+  }
+  if(tr==="Venus"){
+    const base=`Transiting Venus — bringing grace, warmth, and goodwill — ${flow} to your natal ${na==="MC"?"Midheaven":na}`;
+    const area=areaName?`, sweetening ${areaName}`:"";
+    const act=na==="MC"?" People are inclined to favor you publicly — a fine moment for visibility, negotiation, or charm."
+      :na==="Venus"?" Your natural magnetism is doubled — ask, attract, and enjoy."
+      :na==="Mars"?" Attraction and chemistry run high — a good window for romance or making a bold, charming move."
+      :na==="Sun"?" You're easy to like right now — lead with warmth and you'll get a yes."
+      :" Connection, beauty, and money flow more easily — lean into the social.";
+    return base+area+"."+act;
+  }
+  if(tr==="Sun")return `The Sun ${flow} to your natal ${na==="MC"?"Midheaven":na}${areaName?`, energizing ${areaName}`:""} — your visibility and confidence peak; step forward and be seen.`;
+  if(tr==="Mercury")return `Mercury ${flow} to your natal ${na==="MC"?"Midheaven":na}${areaName?`, sharpening ${areaName}`:""} — your mind is quick and your words land; pitch, write, or decide now.`;
+  if(na==="MC")return `Energy gathers at your Midheaven — your direction and public path are switched on. A moment to act on ambition.`;
+  if(harmonic)return `A harmonious thread opens${areaName?` around ${areaName}`:""} — things move with little resistance, so act on the easy opportunity.`;
+  return `A workable, steady pocket of the day${areaName?` for ${areaName}`:""}.`;
+}
 
 /* compute lucky time-windows for ANY day; returns array of {time,end,peak,score,hits} */
 function luckyWindowsForDay(refDate,maxWindows){
@@ -1134,15 +1177,51 @@ function renderInDepthReport(){
   for(const a of asp){const k=[a.transiting,a.natal].sort().join();if(seen.has(k))continue;seen.add(k);major.push(a);}
   major.sort((x,y)=>x.orb-y.orb);
   html+=`<div class="ir"><h4>Your major aspects</h4>`;
-  for(const a of major.slice(0,12)){
-    const t=aspectText(a.transiting,a.natal,a.aspect.name);
+  for(const a of major.slice(0,14)){
     const strength=a.orb<1?"very strong":a.orb<3?"strong":a.orb<5?"moderate":"gentle";
-    const generic=`${a.transiting} ${a.aspect.name} ${a.natal} — ${a.aspect.name==="trine"||a.aspect.name==="sextile"?"these parts of you cooperate and support each other.":a.aspect.name==="conjunction"?"these energies blend and intensify each other.":"these parts of you create productive tension that drives growth."}`;
-    html+=`<div class="ir-item"><div class="h">${planetGlyph(a.transiting)} ${a.transiting} ${a.aspect.name} ${a.natal} ${planetGlyph(a.natal)}</div><div class="b">${t?t.charAt(0).toUpperCase()+t.slice(1)+".":generic} <span class="em">(${strength}, orb ${a.orb.toFixed(1)}°)</span></div></div>`;
+    const text=natalAspectText(a.transiting,a.natal,a.aspect.name);
+    html+=`<div class="ir-item"><div class="h">${planetGlyph(a.transiting)} ${a.transiting} ${a.aspect.name} ${a.natal} ${planetGlyph(a.natal)}</div><div class="b">${text} <span class="em">(${strength}, orb ${a.orb.toFixed(1)}°)</span></div></div>`;
   }
   html+=`</div>`;
   $("indepth-body").innerHTML=html;
   renderLifetimeLuck();
+}
+/* what each planet represents in aspect interpretation */
+const PLANET_PRINCIPLE={
+  Sun:"your identity and will",Moon:"your emotions and instincts",Mercury:"your mind and communication",
+  Venus:"your capacity for love and pleasure",Mars:"your drive and assertion",Jupiter:"your urge to grow and expand",
+  Saturn:"your discipline and sense of limits",Uranus:"your need for freedom and change",
+  Neptune:"your imagination and ideals",Pluto:"your drive for power and transformation",
+};
+/* full natal aspect interpretation — any pair, any aspect, in standard meaning */
+function natalAspectText(p1,p2,aspect){
+  const a=PLANET_PRINCIPLE[p1]||p1,b=PLANET_PRINCIPLE[p2]||p2;
+  // specific, well-known pairings first (the classic signatures)
+  const key=[p1,p2].sort().join("-");
+  const SIGNATURES={
+    "Moon-Sun":{harmonic:"Your inner emotional nature and outer identity work in harmony — you're at ease with yourself, and what you feel matches what you do.",hard:"There's an inner tension between your emotional needs and your conscious will — a lifelong balancing act that builds self-awareness."},
+    "Sun-Venus":{harmonic:"Charm, warmth, and a love of beauty are woven into your identity — you're easy to like and value harmony.",hard:"Your identity and your values can pull in different directions, making relationships and self-worth a rich area of growth."},
+    "Mars-Venus":{harmonic:"Desire and affection flow together — you pursue love with warmth and have natural magnetism.",hard:"Passion and tenderness can clash, creating intense, sometimes turbulent dynamics in love."},
+    "Mars-Sun":{harmonic:"Your will and your drive are aligned — you act with confidence and natural courage.",hard:"Your ego and your impulses can overheat, pushing you to act before you think; channeled well, this is real force."},
+    "Jupiter-Sun":{harmonic:"Optimism and a sense of possibility are built into you — luck tends to follow your confidence.",hard:"You may overreach or overpromise, but your faith in life is a genuine asset when tempered."},
+    "Saturn-Sun":{harmonic:"You have discipline and staying power — you build lasting things through patient effort.",hard:"Self-doubt or a sense of limitation marks early life, hardening into real authority and mastery with age."},
+    "Moon-Venus":{harmonic:"Warm, affectionate, and tender — you nurture those you love and value emotional harmony.",hard:"Your needs and your desires can compete, making love and self-care a meaningful growth area."},
+    "Mercury-Sun":{harmonic:"Your mind and identity are aligned — you think clearly and express yourself with ease.",hard:"Your thoughts can race ahead of yourself; learning to slow down sharpens your considerable mental gifts."},
+    "Moon-Saturn":{harmonic:"Emotional steadiness and maturity — you handle feelings responsibly and offer others reliability.",hard:"You may guard your feelings or feel emotionally restrained early on; this softens into deep emotional strength."},
+    "Jupiter-Venus":{harmonic:"Generous, warm, and socially blessed — love and money tend to come more easily to you.",hard:"A taste for excess in pleasure or spending; abundance is real but benefits from moderation."},
+  };
+  const harmonic=(aspect==="trine"||aspect==="sextile");
+  const conj=(aspect==="conjunction");
+  const sig=SIGNATURES[key];
+  if(sig){
+    if(harmonic)return sig.harmonic;
+    if(conj)return sig.harmonic.replace(/work in harmony|flow together|are aligned|are woven|are built into you/,"are fused and intensified")+" These energies blend powerfully here.";
+    return sig.hard;
+  }
+  // generic but specific fallback built from the two principles
+  if(harmonic)return `${a.charAt(0).toUpperCase()+a.slice(1)} and ${b} support each other easily — these parts of you cooperate, and their gifts come naturally.`;
+  if(conj)return `${a.charAt(0).toUpperCase()+a.slice(1)} and ${b} are fused — they act as one, intensifying each other for better and worse.`;
+  return `${a.charAt(0).toUpperCase()+a.slice(1)} and ${b} are in tension — this friction is uncomfortable at times but drives real growth and dynamism.`;
 }
 function ordinal(n){return n+["th","st","nd","rd"][(n%100>>3^1&&n%10<4)?n%10:0];}
 /* richer sign text for the in-depth view, falling back to the short INTERP.sun etc. */
@@ -1159,13 +1238,13 @@ function INTERP_LONG(planet,sign){
 /* ============ LUCKY TIMES IN YOUR LIFE (forward Jupiter forecast) ============ */
 function renderLifetimeLuck(){
   if(!window.Astronomy){$("lifeluck-body").innerHTML=`<p class="dim">Birth chart needed.</p>`;return;}
-  const targets=[["Sun",cachedNatal.Sun,"a fortunate year for confidence, vitality, and being seen"],
+  const targets=[["Sun",cachedNatal.Sun,"a fortunate season for confidence, vitality, and recognition"],
                  ["Venus",cachedNatal.Venus,"a blessed window for love, money, and the things you value"],
-                 ["Jupiter",cachedNatal.Jupiter,"your Jupiter return — a 12-year reset of growth and opportunity"]];
+                 ["Jupiter",cachedNatal.Jupiter,"a Jupiter return — a 12-year reset of growth and opportunity"]];
   if(cachedAngles)targets.push(["MC",cachedAngles.mc,"a high point for career, recognition, and your public calling"]);
+  const birth=buildBirthDate(profile);
   const found=[];
-  const start=new Date();const end=new Date();end.setFullYear(end.getFullYear()+6);
-  // scan weekly; record when transiting Jupiter is within 1.5° conjunction or trine of each target
+  const start=new Date(birth);const end=new Date(); // birth → today
   for(let t=new Date(start);t<end;t.setDate(t.getDate()+7)){
     let jl;try{jl=eclipticLon("Jupiter",t);}catch(e){continue;}
     for(const [name,lon,desc] of targets){
@@ -1174,19 +1253,21 @@ function renderLifetimeLuck(){
       const isConj=d<2, isTrine=Math.abs(d-120)<2;
       if(isConj||isTrine){
         const key=name+(isConj?"-conj":"-trine");
-        const yr=t.getFullYear(),mo=t.getMonth();
-        // dedupe: one entry per target-aspect per ~year
         if(!found.some(f=>f.key===key&&Math.abs(f.date-t)<120*86400000)){
-          found.push({key,name,date:new Date(t),aspect:isConj?"meets":"harmonizes with",desc});
+          const age=Math.floor((t-birth)/(365.25*86400000));
+          found.push({key,name,date:new Date(t),age,aspect:isConj?"met":"harmonized with",desc});
         }
       }
     }
   }
   found.sort((a,b)=>a.date-b.date);
-  if(!found.length){$("lifeluck-body").innerHTML=`<p class="dim" style="font-size:14px">No exact Jupiter peaks in the next six years — but Jupiter still blesses a new area of your chart each year. Check back as the sky moves.</p>`;return;}
-  $("lifeluck-body").innerHTML=found.slice(0,8).map(f=>{
+  if(!found.length){$("lifeluck-body").innerHTML=`<p class="dim" style="font-size:14px">No exact Jupiter peaks found across your life so far.</p>`;return;}
+  // group into a scrollable life timeline; highlight Jupiter returns
+  $("lifeluck-body").innerHTML=`<p class="dim" style="font-size:13px;margin-bottom:12px">The fortunate Jupiter periods across your life so far — from birth to now. Look back: these often coincided with growth, opportunity, or turning points.</p>`+
+  found.map(f=>{
     const when=f.date.toLocaleDateString(undefined,{month:"short",year:"numeric"});
-    return `<div class="life"><div class="when">${when}</div><div class="what">Jupiter ${f.aspect} your ${f.name==="MC"?"Midheaven":"natal "+f.name}<small>${f.desc}</small></div></div>`;
+    const isReturn=f.key==="Jupiter-conj";
+    return `<div class="life${isReturn?' life-return':''}"><div class="when">${when}<small style="display:block;color:var(--dim);font-weight:400">age ${f.age}</small></div><div class="what">Jupiter ${f.aspect} your ${f.name==="MC"?"Midheaven":"natal "+f.name}${isReturn?' ✦':''}<small>${f.desc}</small></div></div>`;
   }).join("");
 }
 const TRANSIT_FLAVOR={
@@ -1202,6 +1283,56 @@ const TRANSIT_FLAVOR={
  Neptune:{trine:"heightening intuition and imagination",sextile:"softening you toward inspiration",conjunction:"blurring edges — dream, don't decide",square:"clouding clarity; rest and create",opposition:"dissolving a boundary with someone"}
 };
 function transitFlavor(t,type){const e=TRANSIT_FLAVOR[t];return (e&&e[type])?e[type]:"touching your chart";}
+
+/* ============ DEEP TRANSIT READING (developmental, Hand-style) ============
+   A transit's meaning = what the transiting planet is DOING (its process),
+   focused on the AREA the natal planet governs, in the QUALITY of the aspect.
+   These are the standard significations, written in Stellar's own voice. */
+const NATAL_AREA={
+  Sun:"your core identity, vitality, and sense of purpose",
+  Moon:"your emotional life, instincts, and need for security",
+  Mercury:"your thinking, communication, and the way you process information",
+  Venus:"your relationships, finances, and what you find beautiful and valuable",
+  Mars:"your drive, ambition, and how you assert yourself",
+  Jupiter:"your growth, beliefs, and where you seek meaning and opportunity",
+  Saturn:"your responsibilities, structures, and long-term commitments",
+  Uranus:"your need for freedom and the parts of you that want to break new ground",
+  Neptune:"your dreams, ideals, and spiritual or creative life",
+  Pluto:"your deepest patterns of power, control, and transformation",
+};
+// what the transiting planet's "period" is FOR (developmental framing)
+const TRANSIT_PROCESS={
+  Sun:"a brief spotlight that illuminates",
+  Moon:"a passing emotional weather system moving through",
+  Mercury:"a mental and communicative phase touching",
+  Venus:"a sweetening, harmonizing influence on",
+  Mars:"a burst of energy and drive activating",
+  Jupiter:"a season of growth and opportunity expanding",
+  Saturn:"a longer chapter of testing and maturing in the realm of",
+  Uranus:"a disruptive, awakening current shaking loose",
+  Neptune:"a slow, dissolving, dreamlike tide washing over",
+  Pluto:"a deep, transformative, sometimes intense process reworking",
+};
+// aspect quality → how the two energies meet, + a practical cue
+const ASPECT_QUALITY={
+  conjunction:{how:"fuses directly with",cue:"A potent, concentrated moment — whatever begins here carries weight."},
+  trine:{how:"flows easily into",cue:"The path of least resistance is open; lean in and let it carry you."},
+  sextile:{how:"offers a helping hand to",cue:"An opportunity that needs a small, conscious effort to seize."},
+  square:{how:"presses against",cue:"Friction here is the point — it forces growth. Work with the tension, don't fight it."},
+  opposition:{how:"pulls against",cue:"Seek balance between two pulls; the answer is rarely all one side."},
+};
+function deepTransit(a){
+  const proc=TRANSIT_PROCESS[a.transiting]||"an influence touching";
+  const area=NATAL_AREA[a.natal]||"part of your chart";
+  const q=ASPECT_QUALITY[a.aspect.name]||{how:"contacts",cue:""};
+  // slower outer planets = longer, more significant; note that
+  const slow=["Saturn","Uranus","Neptune","Pluto"].includes(a.transiting);
+  const timeNote=slow?" This is a longer transit, so its lesson unfolds over weeks or months, not a day.":"";
+  return {
+    headline:`${proc} ${area}`,
+    body:`Transiting ${a.transiting} ${q.how} your natal ${a.natal} — ${proc} ${area}. ${q.cue}${timeNote}`,
+  };
+}
 
 /* ============ DAILY LIFESTYLE GUIDANCE ============
    Foods, movement, and activities tuned to the dominant energy of the day.
