@@ -129,6 +129,16 @@
   .chip .rx{color:var(--rose);font-weight:700;font-size:11px}
   .life-return{background:rgba(232,201,122,.08);border-radius:10px;padding-left:8px;padding-right:8px}
   .life-return .what{color:var(--gold)}
+  .life-past{opacity:.62}
+  .life-head{font-family:"SF Mono",monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:14px 0 4px}
+  .life-now{text-align:center;color:var(--teal);font-size:12px;letter-spacing:.1em;margin:14px 0;font-family:"SF Mono",monospace}
+  /* collapsible sections */
+  .between.collapsible{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;transition:opacity .15s}
+  .between.collapsible:hover{opacity:.8}
+  .between.collapsible .chev{font-size:13px;color:var(--gold);transition:transform .25s;margin-left:auto;padding-left:10px}
+  .between.collapsed .chev{transform:rotate(-90deg)}
+  .collapse-body{overflow:hidden;transition:max-height .3s ease,opacity .25s,margin .25s}
+  .collapse-body.collapsed{max-height:0!important;opacity:0;margin-top:0!important;margin-bottom:0!important;pointer-events:none}
   .win .peak{display:block;color:var(--teal);font-size:11px;font-weight:600;margin-top:2px;letter-spacing:0}
   .lucky-day{cursor:pointer;border-radius:10px;transition:background .15s}
   .lucky-day:hover{background:rgba(255,255,255,.03)}
@@ -688,6 +698,7 @@ function showNatal(){
   renderProfileBar();
   setupShareSynastry();
   fetchNatalReading();
+  wireCollapsibles();
 }
 function setupShareSynastry(){
   if(profiles.length>=2){
@@ -714,6 +725,39 @@ function initials(name){if(!name)return "✦";return name.trim().split(/\s+/).ma
 function renderProfileCorners(){
   const label=profile?initials(profile.name):"✦";
   ["pcorner-dash","pcorner-natal"].forEach(id=>{const el=$(id);if(el)el.textContent=label;});
+}
+/* ---- collapsible sections: tap a header to expand/collapse the card below ---- */
+const COLLAPSE_KEY="stellar.collapsed";
+let collapsedSet=null;
+function loadCollapsed(){if(collapsedSet)return;try{collapsedSet=new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY)||"[]"));}catch(e){collapsedSet=new Set();}}
+function saveCollapsed(){try{localStorage.setItem(COLLAPSE_KEY,JSON.stringify([...collapsedSet]));}catch(e){}}
+function sectionLabel(header){const l=header.querySelector(".label");return l?l.textContent.trim():"";}
+function wireCollapsibles(scope){
+  loadCollapsed();
+  const root=scope||document;
+  root.querySelectorAll(".between").forEach(header=>{
+    // skip ones already wired, or headers not followed by a body card
+    if(header.dataset.collap)return;
+    const body=header.nextElementSibling;
+    if(!body||!body.classList||!(body.classList.contains("card")||body.id==="events-section"||body.id==="relate-section"))return;
+    // don't collapse tiny structural headers (e.g. onboarding divider)
+    const label=sectionLabel(header);
+    if(!label||label==="or enter birth details")return;
+    header.dataset.collap="1";
+    header.classList.add("collapsible");
+    body.classList.add("collapse-body");
+    const chev=document.createElement("span");chev.className="chev";chev.textContent="▾";header.appendChild(chev);
+    // restore saved state
+    if(collapsedSet.has(label)){header.classList.add("collapsed");body.classList.add("collapsed");}
+    header.addEventListener("click",()=>{
+      const nowCollapsed=!body.classList.contains("collapsed");
+      body.classList.toggle("collapsed",nowCollapsed);
+      header.classList.toggle("collapsed",nowCollapsed);
+      if(nowCollapsed)collapsedSet.add(label);else collapsedSet.delete(label);
+      saveCollapsed();
+      if(!nowCollapsed){body.style.maxHeight=body.scrollHeight+"px";setTimeout(()=>{body.style.maxHeight="";},320);}
+    });
+  });
 }
 function openProfileMenu(){
   const list=$("pmenu-list");
@@ -769,6 +813,7 @@ function renderDash(){
   renderSkyNow();
   renderJournal(now);
   renderTarot();
+  wireCollapsibles();
 }
 function journalKey(date){const ds=date.toISOString().slice(0,10);return `stellar.journal.${activeId||"x"}.${ds}`;}
 function renderJournal(date){
@@ -923,6 +968,7 @@ function renderMonth(){
   const peak=dayScores.reduce((a,b)=>b.score>a.score?b:a);
   $("month-note").textContent=`Your strongest day this month looks like ${new Date(year,mon,peak.day).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})}. Shading shows how favorable each day's transits are to your chart, scored at midday.`;
   renderJournalCalendar(year,mon,daysInMonth,startDow);
+  wireCollapsibles();
 }
 function journalEntriesForMonth(year,mon,daysInMonth){
   const entries=[];
@@ -1183,10 +1229,119 @@ function renderInDepthReport(){
     html+=`<div class="ir-item"><div class="h">${planetGlyph(a.transiting)} ${a.transiting} ${a.aspect.name} ${a.natal} ${planetGlyph(a.natal)}</div><div class="b">${text} <span class="em">(${strength}, orb ${a.orb.toFixed(1)}°)</span></div></div>`;
   }
   html+=`</div>`;
+  // life areas: love, money, career
+  try{html+=renderLove();}catch(e){}
+  try{html+=renderMoney();}catch(e){}
+  try{html+=renderCareer();}catch(e){}
   $("indepth-body").innerHTML=html;
   renderLifetimeLuck();
 }
 /* what each planet represents in aspect interpretation */
+/* ============ LIFE AREAS: LOVE, MONEY, CAREER ============
+   Standard astrological significations for the three things people ask about most.
+   Love = Venus (how you love) + Mars (what you're drawn to / desire).
+   Money = 2nd-house sign + Venus/Jupiter/Saturn placements.
+   Career = Midheaven sign + Sun sign. All in Stellar's own voice. */
+
+// How you love — by Venus sign
+const VENUS_LOVE={
+  Aries:"You love boldly and fast — direct, passionate, a little impatient. You chase what you want and lose interest in anything that feels lukewarm. You need a partner who keeps the spark and excitement alive.",
+  Taurus:"You love steadily and sensually — loyal, affectionate, and in it for the long haul. You show love through touch, comfort, and reliability, and you need security and physical closeness to feel truly loved.",
+  Gemini:"You love through words and wit — you need mental connection, banter, and variety. Boredom is your enemy in love. The right partner keeps you curious and talks with you for hours.",
+  Cancer:"You love deeply and protectively — tender, nurturing, and emotionally devoted. You need to feel safe before you open up, and once you do, you love like family. Emotional security is everything.",
+  Leo:"You love warmly and generously — loyal, romantic, and a little dramatic in the best way. You need to feel adored and to adore in return. Affection, attention, and pride in your partner matter to you.",
+  Virgo:"You love through devotion and small acts of care — practical, attentive, quietly deep. You show love by helping and improving things. You need a partner who notices the effort and doesn't take you for granted.",
+  Libra:"You love through partnership itself — harmony, romance, and togetherness are your natural element. You're happiest paired, and you give a lot to keep the peace. Watch that you don't lose yourself pleasing others.",
+  Scorpio:"You love intensely and all-or-nothing — deep, loyal, and a little guarded until trust is earned. You crave true intimacy and emotional honesty, and surface-level connection will never satisfy you.",
+  Sagittarius:"You love freely and adventurously — you need space, honesty, and a partner who's also a friend and fellow explorer. Shared meaning and laughter matter more to you than routine or possessiveness.",
+  Capricorn:"You love seriously and for keeps — committed, loyal, and steady. You may be reserved at first, but your love is built to last. You show it through reliability and showing up, not grand gestures.",
+  Aquarius:"You love as a friend first — you need independence, mental connection, and a partner who respects your individuality. You're drawn to the unconventional and need freedom within closeness.",
+  Pisces:"You love tenderly and selflessly — romantic, compassionate, almost devotional. You merge deeply with a partner and can idealize them. You need someone gentle who won't take advantage of your softness.",
+};
+// What you're drawn to / your desire nature — by Mars sign
+const MARS_DESIRE={
+  Aries:"drawn to confident, direct, take-charge energy",Taurus:"drawn to steady, sensual, grounded partners",
+  Gemini:"drawn to clever, talkative, mentally stimulating people",Cancer:"drawn to nurturing, emotionally present partners",
+  Leo:"drawn to warm, proud, charismatic people",Virgo:"drawn to capable, modest, put-together partners",
+  Libra:"drawn to charming, fair, aesthetically pleasing people",Scorpio:"drawn to intense, magnetic, deep partners",
+  Sagittarius:"drawn to adventurous, free-spirited, optimistic people",Capricorn:"drawn to ambitious, mature, accomplished partners",
+  Aquarius:"drawn to unique, independent, unconventional people",Pisces:"drawn to gentle, artistic, dreamy partners",
+};
+// elemental compatibility for the "good match / challenging" read
+const SIGN_EL={Aries:"fire",Leo:"fire",Sagittarius:"fire",Taurus:"earth",Virgo:"earth",Capricorn:"earth",Gemini:"air",Libra:"air",Aquarius:"air",Cancer:"water",Scorpio:"water",Pisces:"water"};
+const EL_MATCH={
+  fire:{easy:["fire","air"],hard:["water","earth"],why:"Fire signs (Aries, Leo, Sagittarius) and air signs (Gemini, Libra, Aquarius) tend to feed your spark and pace; water and earth can feel like they dampen or slow your fire."},
+  earth:{easy:["earth","water"],hard:["fire","air"],why:"Earth signs (Taurus, Virgo, Capricorn) and water signs (Cancer, Scorpio, Pisces) tend to match your need for stability and depth; fire and air can feel too restless or detached for you."},
+  air:{easy:["air","fire"],hard:["earth","water"],why:"Air signs (Gemini, Libra, Aquarius) and fire signs (Aries, Leo, Sagittarius) tend to match your need for stimulation and freedom; earth and water can feel too heavy or clingy."},
+  water:{easy:["water","earth"],hard:["fire","air"],why:"Water signs (Cancer, Scorpio, Pisces) and earth signs (Taurus, Virgo, Capricorn) tend to meet your emotional depth; fire and air can feel too breezy or intense in the wrong way."},
+};
+function renderLove(){
+  const v=signFromLon(cachedNatal.Venus),m=signFromLon(cachedNatal.Mars);
+  const el=SIGN_EL[v.sign],match=EL_MATCH[el];
+  const easySigns=Object.keys(SIGN_EL).filter(s=>match.easy.includes(SIGN_EL[s]));
+  const dsc=cachedAngles?signFromLon((cachedAngles.asc+180)%360):null;
+  let html=`<div class="ir"><h4>How you love</h4><div class="ir-item"><div class="b">${VENUS_LOVE[v.sign]}</div></div>`;
+  html+=`<div class="ir-item"><div class="h">What you're drawn to</div><div class="b">With Mars in ${m.sign}, you're ${MARS_DESIRE[m.sign]}. That's the energy that tends to attract and excite you.</div></div>`;
+  if(dsc)html+=`<div class="ir-item"><div class="h">Your relationship mirror</div><div class="b">Your Descendant is in ${dsc.sign} — you often attract or seek partners who carry ${dsc.sign} qualities, the traits you're learning to balance in yourself through relationship.</div></div>`;
+  html+=`<div class="ir"><h4>Good matches & challenges</h4><div class="ir-item"><div class="h">Naturally easy with</div><div class="b">${match.why}</div></div>`;
+  html+=`<div class="ir-item"><div class="h">A note on compatibility</div><div class="b">Element and sun sign are only a starting point — real compatibility comes from comparing whole charts (that's what the Synastry tool does). But as a rule of thumb, you tend to flow most easily with ${easySigns.slice(0,3).join(", ")} types, while opposite elements bring more friction (and sometimes more growth and attraction).</div></div></div>`;
+  return html;
+}
+// Money — by the sign on the 2nd house cusp
+const MONEY_BY_SIGN={
+  Aries:"You make and spend money fast and on impulse. You're great at earning through initiative and bold moves, but watch impulsive purchases and get-rich-quick urges. Budgeting isn't natural — automate your savings.",
+  Taurus:"You're naturally good with money — steady, security-minded, and able to build wealth slowly. You value comfort and quality. Watch a tendency toward over-indulgence or holding too tightly; loosen up occasionally.",
+  Gemini:"Money comes and goes through many channels — you're versatile and clever with income, often juggling several streams. Watch scattered spending and a lack of follow-through; pick a system and stick to it.",
+  Cancer:"You're cautious and protective with money — you save for security and your home and family. You have good instincts, but watch emotional or comfort spending when you're stressed. Your nest egg matters to you.",
+  Leo:"You're generous and enjoy spending on quality, fun, and the people you love — sometimes too generously. You can earn well through confidence and creativity. Watch lifestyle inflation and spending to impress.",
+  Virgo:"You're careful, detailed, and excellent at managing money — budgeting and tracking come naturally. Your risk is overthinking or being too frugal to enjoy what you have. Trust your competence and loosen up.",
+  Libra:"You spend on beauty, relationships, and harmony — and can struggle to say no or to make firm financial decisions. You earn well through partnerships. Watch overspending on others and indecision about money.",
+  Scorpio:"You're strategic and intense with money — good at investing, managing shared resources, and playing the long game. You can build real wealth. Watch secrecy or control issues around money in relationships.",
+  Sagittarius:"You're optimistic and generous with money, sometimes to a fault — you spend on freedom, travel, and experiences. You earn through big-picture vision. Watch overspending and over-optimistic financial bets.",
+  Capricorn:"You're disciplined and ambitious with money — a natural long-term builder who plays it safe and wins slowly. One of the best placements for lasting wealth. Watch being so cautious you never enjoy it.",
+  Aquarius:"You have an unconventional relationship with money — income may come in unusual ways, and you value freedom over security. You're innovative but erratic. Watch ignoring money until it becomes a problem.",
+  Pisces:"Money is slippery for you — you're generous, intuitive, and not very materialistic, which is lovely but risky. You can earn through creative or compassionate work. Watch vague budgeting and giving too much away.",
+};
+function renderMoney(){
+  const cusps=cachedAngles?cachedAngles.cusps:null;
+  const secondSign=cusps?signFromLon(cusps[1]).sign:signFromLon(cachedNatal.Venus).sign;
+  let html=`<div class="ir"><h4>How you handle money</h4><div class="ir-item"><div class="b">${MONEY_BY_SIGN[secondSign]}</div></div>`;
+  // Jupiter (where money flows) and Saturn (where to be disciplined)
+  const cuspsOk=cusps;
+  if(cuspsOk){
+    const jh=houseOf(cachedNatal.Jupiter,cusps),sh=houseOf(cachedNatal.Saturn,cusps);
+    if(jh)html+=`<div class="ir-item"><div class="h">Where fortune flows</div><div class="b">Your Jupiter in the ${ordinal(jh)} house suggests money and opportunity tend to come through ${HOUSES[jh-1].name.toLowerCase()} — ${HOUSES[jh-1].theme}.</div></div>`;
+    if(sh)html+=`<div class="ir-item"><div class="h">Where to be disciplined</div><div class="b">Your Saturn in the ${ordinal(sh)} house is where money lessons are learned the hard way — ${HOUSES[sh-1].name.toLowerCase()}. Build slowly and carefully here and it becomes a source of lasting security.</div></div>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+// Career / purpose — by Midheaven sign
+const MC_CAREER={
+  Aries:"You're built to lead, start, and pioneer. You thrive where you can be first, act fast, and be your own boss — entrepreneurship, competition, anything bold. Routine and taking orders drain you.",
+  Taurus:"You're suited to work that's tangible, stable, and builds lasting value — finance, food, design, craft, real estate, anything you can grow patiently. You want security and something solid to show for it.",
+  Gemini:"You shine in communication — writing, teaching, media, sales, anything with words, ideas, and variety. You need mental stimulation and hate being boxed into one repetitive task.",
+  Cancer:"You're drawn to nurturing, caring, and creating safety for others — work involving people, home, food, family, history, or emotional care. You do best where you feel personally invested.",
+  Leo:"You're meant to be seen — performance, leadership, creative work, anything with a stage or spotlight. You thrive where you can express yourself and be recognized for it. You're a natural leader and creator.",
+  Virgo:"You excel at craft, analysis, and improvement — health, editing, systems, service, anything requiring precision and useful skill. You find purpose in being genuinely helpful and doing things well.",
+  Libra:"You're suited to work involving people, beauty, fairness, and partnership — law, design, diplomacy, the arts, counseling. You thrive collaborating and creating harmony or beauty.",
+  Scorpio:"You're drawn to depth, transformation, and the hidden — psychology, research, finance, investigation, healing, anything intense and meaningful. You want work that matters and transforms.",
+  Sagittarius:"You need freedom, meaning, and big horizons — teaching, travel, publishing, philosophy, anything that expands minds (including your own). You wither in narrow, routine roles.",
+  Capricorn:"You're built to climb and achieve — leadership, business, structure, long-term goals. You're ambitious and disciplined, and you find real purpose in building something respected and lasting.",
+  Aquarius:"You're meant for the innovative and humanitarian — technology, science, social causes, anything progressive or unconventional. You want to improve things for the many and need freedom to think differently.",
+  Pisces:"You're drawn to the creative, spiritual, and compassionate — art, music, film, healing, caregiving, anything that touches the soul. You need work with meaning and imagination, not cold logic.",
+};
+function renderCareer(){
+  const mc=cachedAngles?signFromLon(cachedAngles.mc):null;
+  const sun=signFromLon(cachedNatal.Sun);
+  let html=`<div class="ir"><h4>Career & purpose</h4>`;
+  if(mc)html+=`<div class="ir-item"><div class="h">Your calling (Midheaven in ${mc.sign})</div><div class="b">${MC_CAREER[mc.sign]}</div></div>`;
+  html+=`<div class="ir-item"><div class="h">What fuels you (Sun in ${sun.sign})</div><div class="b">At your core you're energized by ${INTERP.sun[sun.sign]} Work that lets you express this will always feel more like purpose than a job.</div></div>`;
+  const cusps=cachedAngles?cachedAngles.cusps:null;
+  if(cusps){const tenth=houseOf(cachedNatal.Sun,cusps);if(tenth===10)html+=`<div class="ir-item"><div class="b">Your Sun sits in your 10th house — career and public achievement are central to your identity. You're here to be known for your work.</div></div>`;}
+  html+=`</div>`;
+  return html;
+}
 const PLANET_PRINCIPLE={
   Sun:"your identity and will",Moon:"your emotions and instincts",Mercury:"your mind and communication",
   Venus:"your capacity for love and pleasure",Mars:"your drive and assertion",Jupiter:"your urge to grow and expand",
@@ -1243,8 +1398,10 @@ function renderLifetimeLuck(){
                  ["Jupiter",cachedNatal.Jupiter,"a Jupiter return — a 12-year reset of growth and opportunity"]];
   if(cachedAngles)targets.push(["MC",cachedAngles.mc,"a high point for career, recognition, and your public calling"]);
   const birth=buildBirthDate(profile);
+  const now=new Date();
   const found=[];
-  const start=new Date(birth);const end=new Date(); // birth → today
+  // scan from birth out to ~age 90 (covers a full life, past and future)
+  const start=new Date(birth);const end=new Date(birth);end.setFullYear(end.getFullYear()+90);
   for(let t=new Date(start);t<end;t.setDate(t.getDate()+7)){
     let jl;try{jl=eclipticLon("Jupiter",t);}catch(e){continue;}
     for(const [name,lon,desc] of targets){
@@ -1255,20 +1412,31 @@ function renderLifetimeLuck(){
         const key=name+(isConj?"-conj":"-trine");
         if(!found.some(f=>f.key===key&&Math.abs(f.date-t)<120*86400000)){
           const age=Math.floor((t-birth)/(365.25*86400000));
-          found.push({key,name,date:new Date(t),age,aspect:isConj?"met":"harmonized with",desc});
+          found.push({key,name,date:new Date(t),age,aspect:isConj?"meets":"harmonizes with",desc});
         }
       }
     }
   }
   found.sort((a,b)=>a.date-b.date);
-  if(!found.length){$("lifeluck-body").innerHTML=`<p class="dim" style="font-size:14px">No exact Jupiter peaks found across your life so far.</p>`;return;}
-  // group into a scrollable life timeline; highlight Jupiter returns
-  $("lifeluck-body").innerHTML=`<p class="dim" style="font-size:13px;margin-bottom:12px">The fortunate Jupiter periods across your life so far — from birth to now. Look back: these often coincided with growth, opportunity, or turning points.</p>`+
-  found.map(f=>{
+  if(!found.length){$("lifeluck-body").innerHTML=`<p class="dim" style="font-size:14px">No exact Jupiter peaks found.</p>`;return;}
+  const past=found.filter(f=>f.date<now), future=found.filter(f=>f.date>=now);
+  const rowHtml=(f,isPast)=>{
     const when=f.date.toLocaleDateString(undefined,{month:"short",year:"numeric"});
     const isReturn=f.key==="Jupiter-conj";
-    return `<div class="life${isReturn?' life-return':''}"><div class="when">${when}<small style="display:block;color:var(--dim);font-weight:400">age ${f.age}</small></div><div class="what">Jupiter ${f.aspect} your ${f.name==="MC"?"Midheaven":"natal "+f.name}${isReturn?' ✦':''}<small>${f.desc}</small></div></div>`;
-  }).join("");
+    const verb=isPast?(f.aspect==="meets"?"met":"harmonized with"):f.aspect;
+    return `<div class="life${isReturn?' life-return':''}${isPast?' life-past':''}"><div class="when">${when}<small style="display:block;color:var(--dim);font-weight:400">age ${f.age}</small></div><div class="what">Jupiter ${verb} your ${f.name==="MC"?"Midheaven":"natal "+f.name}${isReturn?' ✦':''}<small>${f.desc}</small></div></div>`;
+  };
+  let html=`<p class="dim" style="font-size:13px;margin-bottom:12px">Your fortunate Jupiter periods across a lifetime — the ones you've lived through, and the ones still ahead. ✦ marks a Jupiter return (a major 12-year new beginning).</p>`;
+  if(past.length){
+    html+=`<div class="life-head">Lived through</div>`+past.map(f=>rowHtml(f,true)).join("");
+  }
+  html+=`<div class="life-now">↓ you are here ↓</div>`;
+  if(future.length){
+    html+=`<div class="life-head" style="color:var(--gold)">Still to come</div>`+future.map(f=>rowHtml(f,false)).join("");
+  }else{
+    html+=`<p class="dim" style="font-size:13px">That's your timeline through age 90.</p>`;
+  }
+  $("lifeluck-body").innerHTML=html;
 }
 const TRANSIT_FLAVOR={
  Jupiter:{trine:"opening doors and widening your sense of what's possible",sextile:"offering an opportunity if you reach for it",conjunction:"expanding and amplifying whatever it touches",square:"tempting you to overpromise or overreach",opposition:"asking you to find the right size between caution and excess"},
