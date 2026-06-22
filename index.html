@@ -353,6 +353,10 @@
       </div>
       <div class="between"><span class="label">Make the most of today</span></div>
       <div class="card"><div id="lifestyle-body"></div></div>
+      <div class="between"><span class="label">Your month ahead</span></div>
+      <div class="card"><div id="month-horo-body"></div></div>
+      <div class="between"><span class="label">Your year ahead</span></div>
+      <div class="card"><div id="year-horo-body"></div></div>
       <div class="between"><span class="label">Lucky windows today</span></div>
       <div class="card"><div id="lucky-tznote" class="dim" style="font-size:12px;margin-bottom:10px"></div><div id="lucky-list"><div class="loading dotpulse">Finding your windows</div></div></div>
 
@@ -813,6 +817,7 @@ function renderDash(){
   renderSkyNow();
   renderJournal(now);
   renderTarot();
+  try{renderMonthlyHoroscope();renderYearlyHoroscope();}catch(e){}
   wireCollapsibles();
 }
 function journalKey(date){const ds=date.toISOString().slice(0,10);return `stellar.journal.${activeId||"x"}.${ds}`;}
@@ -1829,33 +1834,46 @@ function renderDailyReadingOffline(){
   // lead from tightest transit (or calm day)
   if(cachedAspects.length){
     const top=cachedAspects[0];
-    const lead=top.aspect.luck>0?"The sky leans in your favor today.":top.aspect.luck<0?"Today asks something of you before it gives.":"A day with a clear current running through it.";
+    const harmonic=top.aspect.luck>0;
+    const lead=harmonic?"The sky leans in your favor today.":top.aspect.luck<0?"Today asks something of you before it gives.":"A day with a clear current running through it.";
     paras.push(lead);
-    // body: 1-2 tightest transits
-    let body=`Transiting ${top.transiting} is ${transitFlavor(top.transiting,top.aspect.name)}, touching your natal ${top.natal==="MC"?"Midheaven":top.natal}.`;
-    if(cachedAspects[1]){const s=cachedAspects[1];body+=` Underneath, ${s.transiting} works on your ${s.natal==="MC"?"Midheaven":s.natal}, ${transitFlavor(s.transiting,s.aspect.name)}.`;}
+    // body: translate the tightest transit into plain, life-focused language
+    const area=NATAL_AREA[top.natal]||"a key part of your life";
+    const proc={Sun:"a burst of light and confidence",Moon:"a wave of feeling",Mercury:"busy thoughts and conversations",Venus:"warmth and ease",Mars:"a surge of drive and urgency",Jupiter:"a sense of opening and possibility",Saturn:"a call for patience and effort",Uranus:"a jolt of the unexpected",Neptune:"a dreamy, blurry softness",Pluto:"a deep, intense undercurrent"}[top.transiting]||"a shift";
+    const qual=top.aspect.name==="trine"||top.aspect.name==="sextile"?"and it flows easily — lean into it"
+      :top.aspect.name==="conjunction"?"and it's concentrated and strong today"
+      :top.aspect.name==="square"?"and there's friction here that's actually pushing you to grow"
+      :top.aspect.name==="opposition"?"and you're being asked to find a balance between two pulls":"today";
+    let body=`The main thread today: ${proc} is moving through ${area}, ${qual}.`;
+    // what to actually do with it
+    const doNote=harmonic?` This is a good day to lean into ${shortArea(top.natal)} rather than resist it.`
+      :top.aspect.luck<0?` Don't force outcomes around ${shortArea(top.natal)} today — work with the tension and it pays off later.`:"";
+    body+=doNote;
+    // second transit, plainly
+    if(cachedAspects[1]){const s=cachedAspects[1];const sproc={Sun:"your confidence",Moon:"your emotions",Mercury:"your thinking",Venus:"your relationships and money",Mars:"your drive",Jupiter:"your sense of opportunity",Saturn:"your responsibilities",Uranus:"your urge for change",Neptune:"your imagination",Pluto:"your deeper drives"}[s.transiting]||"another current";
+      body+=` Underneath that, ${sproc} is also stirred — a quieter second note to the day.`;}
     paras.push(body);
   }else{
     paras.push("A quiet, evenly-paced day.");
-    paras.push("No major transit is pulling on your chart right now, so the day is yours to shape. Move at your own rhythm and trust your defaults.");
+    paras.push("No major planet is pulling on your chart right now, so the day is yours to shape. Move at your own rhythm and trust your instincts.");
   }
-  // lucky windows
+  // lucky windows — in plain language
   if(luckyWindowsForPrompt.length){
     const f=d=>d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
     const w=luckyWindowsForPrompt[0];const end=new Date(w.time.getTime()+90*60000);
-    let lp=`Your strongest window looks like ${f(w.time)}–${f(end)}`;
-    if(w.hits&&w.hits.length){lp+=`, when ${w.hits[0].transiting} ${w.hits[0].aspect.name}s your ${w.hits[0].natal==="MC"?"Midheaven":w.hits[0].natal} — good for anything tied to your direction and visibility.`;}
-    else lp+=` — a naturally easy stretch.`;
-    if(luckyWindowsForPrompt[1]){const w2=luckyWindowsForPrompt[1];const e2=new Date(w2.time.getTime()+90*60000);lp+=` A second opening comes around ${f(w2.time)}–${f(e2)}.`;}
+    let lp=`Your best window looks like ${f(w.time)}–${f(end)}`;
+    if(w.hits&&w.hits.length){const hh=w.hits[0];lp+=` — ${luckMeaning(hh)}`;}
+    else lp+=` — a naturally easy, open stretch.`;
+    if(luckyWindowsForPrompt[1]){const w2=luckyWindowsForPrompt[1];const e2=new Date(w2.time.getTime()+90*60000);lp+=` A second good pocket opens around ${f(w2.time)}–${f(e2)}.`;}
     paras.push(lp);
   }else{
-    paras.push("No standout lucky window today — the day's energy is even, so lead with your own timing.");
+    paras.push("No standout lucky window today — the energy's even, so lead with your own timing.");
   }
   // weave in the biggest 2026 event of the day, if any
   if(cachedEvents){
     if(cachedEvents.ingress)paras.push(cachedEvents.ingress.text);
-    else if(cachedEvents.eclipse)paras.push(`This is eclipse season: a ${cachedEvents.eclipse.kind} falls at ${cachedEvents.eclipse.deg} ${cachedEvents.eclipse.sign}. Eclipses speed things up — let what wants to change, change.`);
-    else if(cachedEvents.retro.length){const r=cachedEvents.retro[0];paras.push(r.planet==="Mercury"?`One note: Mercury is retrograde in ${r.sign} right now — a good stretch to revise and double-check rather than launch.`:`One note: ${r.planet} is retrograde in ${r.sign} — a season for review rather than bold new starts in that area.`);}
+    else if(cachedEvents.eclipse)paras.push(`It's eclipse season — a ${cachedEvents.eclipse.kind} in ${cachedEvents.eclipse.sign}. Eclipses speed life up and shake things loose, so let what wants to change, change.`);
+    else if(cachedEvents.retro.length){const r=cachedEvents.retro[0];paras.push(r.planet==="Mercury"?`Heads up: Mercury is retrograde in ${r.sign} — a stretch for double-checking messages and plans rather than launching something brand new.`:`Note: ${r.planet} is retrograde in ${r.sign} — a season to review and revisit rather than start fresh in that area.`);}
   }
   $("reading").innerHTML=paras.map((p,i)=>`<p${i===0?' class="lead"':''}>${escapeHtml(p)}</p>`).join("");
   $("reroll").classList.add("hide");
@@ -1869,7 +1887,72 @@ function renderDailyReadingOffline(){
       `<div class="ls"><span class="ls-icon">✦</span><div><b>Do</b> ${ls.do}</div></div>`;
   }catch(e){$("lifestyle-body").innerHTML="";}
 }
+// short life-area label for a natal point
+function shortArea(p){return {Sun:"who you are and how you show up",Moon:"your feelings and home life",Mercury:"talking, thinking, and decisions",Venus:"love, money, and connection",Mars:"action and going after what you want",Jupiter:"growth and opportunities",Saturn:"work and responsibilities",Uranus:"freedom and change",Neptune:"dreams and creativity",Pluto:"deep change and personal power",MC:"your career and public life"}[p]||"this area";}
+// plain-language meaning of a lucky-window driver
+function luckMeaning(hh){
+  const tr=hh.transiting,na=hh.natal;
+  if(tr==="Jupiter"&&na==="MC")return "Jupiter is blessing your career zone, so it's prime time to ask, pitch, or put yourself out there.";
+  if(tr==="Jupiter"&&na==="Venus")return "Jupiter is lighting up your love-and-money zone — a lucky window to connect, ask, or say yes.";
+  if(tr==="Jupiter")return "Jupiter is opening a door — reach a little higher than feels comfortable.";
+  if(tr==="Venus"&&na==="MC")return "Venus is making you likeable in public — great for charm, negotiation, or being seen.";
+  if(tr==="Venus")return "Venus is sweetening things — good for connection, asking, and anything social.";
+  if(tr==="Sun")return "the Sun is boosting your confidence — step forward and be seen.";
+  if(tr==="Moon"&&na==="MC")return "the Moon is favoring your direction — good for anything tied to your goals and visibility.";
+  return `${tr} is harmonizing with your ${na==="MC"?"career point":na} — an easy, supported stretch.`;
+}
 function fetchReading(){ $("reading-err").classList.add("hide"); try{renderDailyReadingOffline();}catch(e){$("reading").innerHTML=`<p>Your chart and lucky windows are shown above.</p>`;} }
+
+/* ============ MONTHLY & YEARLY HOROSCOPES ============
+   Read the slower transits against the natal chart, focused on love/money/career.
+   Monthly = where the Sun and inner planets move through your houses this month.
+   Yearly = the big outer-planet stories (Jupiter, Saturn) touching your chart. */
+function houseFocus(houseNum){
+  // what life-area a transit through this house activates
+  return {1:"you, your body, and fresh starts",2:"money, income, and self-worth",3:"communication, learning, and your local world",4:"home, family, and your inner foundation",5:"romance, creativity, and joy",6:"work, health, and daily routine",7:"relationships and partnership",8:"intimacy, shared money, and transformation",9:"travel, study, and the big picture",10:"career, status, and your public life",11:"friends, community, and hopes",12:"rest, spirit, and inner work"}[houseNum]||"this area of life";
+}
+function renderMonthlyHoroscope(){
+  if(!cachedAngles){$("month-horo-body").innerHTML=`<p class="dim" style="font-size:14px">Add a birth time to unlock the monthly horoscope (it needs your houses).</p>`;return;}
+  const now=new Date();const cusps=cachedAngles.cusps;
+  const monthName=now.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  // where the Sun is this month, and which of YOUR houses it lights up
+  const sunLon=eclipticLon("Sun",now);const sunHouse=houseOf(sunLon,cusps);
+  const sunSign=signFromLon(sunLon).sign;
+  // Venus (love/money) and Mars (drive) houses this month
+  const venusHouse=houseOf(eclipticLon("Venus",now),cusps);
+  const marsHouse=houseOf(eclipticLon("Mars",now),cusps);
+  let html=`<p class="dim" style="font-size:13px;margin-bottom:14px">${monthName} — where the sky is moving through your chart this month.</p>`;
+  html+=`<div class="ir-item"><div class="h">The theme this month</div><div class="b">With the Sun moving through your ${ordinal(sunHouse)} house, this month puts the spotlight on ${houseFocus(sunHouse)}. This is where your energy and attention naturally flow for the next few weeks.</div></div>`;
+  html+=`<div class="ir-item"><div class="h">♀ Love & money</div><div class="b">Venus is travelling through your ${ordinal(venusHouse)} house, sweetening ${houseFocus(venusHouse)}. ${venusHouse===5||venusHouse===7?"A warm month for romance and connection.":venusHouse===2||venusHouse===8?"A favorable stretch for money and what you value.":"Affection and ease flow toward that part of your life."}</div></div>`;
+  html+=`<div class="ir-item"><div class="h">♂ Drive & action</div><div class="b">Mars is firing up your ${ordinal(marsHouse)} house, so your energy and push go toward ${houseFocus(marsHouse)}. Channel effort here — it's where you'll have the most force this month.</div></div>`;
+  // any retrograde or eclipse this month
+  const ev=notableEvents(now);
+  if(ev.retro.length){const r=ev.retro[0];html+=`<div class="ir-item"><div class="h">Watch for</div><div class="b">${r.planet} is retrograde in ${r.sign} this month — a time to review and revisit rather than rush forward in matters it touches.</div></div>`;}
+  $("month-horo-body").innerHTML=html;
+}
+function renderYearlyHoroscope(){
+  if(!cachedAngles){$("year-horo-body").innerHTML=`<p class="dim" style="font-size:14px">Add a birth time to unlock the yearly horoscope.</p>`;return;}
+  const now=new Date();const year=now.getFullYear();const cusps=cachedAngles.cusps;
+  // Jupiter (the year's luck) — which house it spends most of the year in
+  const midYear=new Date(year,6,1);
+  const jupHouse=houseOf(eclipticLon("Jupiter",midYear),cusps);
+  const satHouse=houseOf(eclipticLon("Saturn",midYear),cusps);
+  let html=`<p class="dim" style="font-size:13px;margin-bottom:14px">${year} — the big themes shaping your year.</p>`;
+  html+=`<div class="ir-item"><div class="h">✦ Where your luck grows (Jupiter)</div><div class="b">Jupiter spends much of ${year} in your ${ordinal(jupHouse)} house, expanding ${houseFocus(jupHouse)}. This is your area of growth and opportunity this year — say yes to what opens up here, and reach higher than usual.</div></div>`;
+  html+=`<div class="ir-item"><div class="h">♄ Where you're building (Saturn)</div><div class="b">Saturn works through your ${ordinal(satHouse)} house, asking for patience and real effort around ${houseFocus(satHouse)}. It can feel heavy, but what you build here this year becomes lasting and solid. Don't avoid it — master it.</div></div>`;
+  // love / money / career angle for the year
+  const loveHouse=jupHouse===5||jupHouse===7||satHouse===5||satHouse===7;
+  const moneyHouse=jupHouse===2||jupHouse===8||satHouse===2||satHouse===8;
+  const careerHouse=jupHouse===10||jupHouse===6||satHouse===10||satHouse===6;
+  let focus=[];
+  if(loveHouse)focus.push("relationships are a major storyline this year");
+  if(moneyHouse)focus.push("money and resources are in focus");
+  if(careerHouse)focus.push("career and work take center stage");
+  if(focus.length)html+=`<div class="ir-item"><div class="h">The headline</div><div class="b">For you, ${focus.join(", and ")} in ${year}.</div></div>`;
+  // major 2026 events
+  html+=`<div class="ir-item"><div class="h">Rare shifts in ${year}</div><div class="b">${year===2026?"This is a landmark year in the sky: Saturn enters Aries, Neptune joins it at 0° Aries (a rare meeting of dream and reality), Uranus settles into Gemini for seven years, and Jupiter moves into Leo mid-year. Big, generational change is in the air.":"The outer planets continue their slow, generational movements, reshaping the deeper currents of your life."}</div></div>`;
+  $("year-horo-body").innerHTML=html;
+}
 
 
 $("i-place").addEventListener("input",e=>{const q=e.target.value.trim();$("place-set").classList.add("hide");chosenPlace=null;clearTimeout(acTimer);if(q.length<2){$("ac").classList.add("hide");setAcStatus(null);return;}setAcStatus("Searching…");acTimer=setTimeout(async()=>{try{const items=await searchPlaces(q);if(!items.length){$("ac").classList.add("hide");setAcStatus("No matches. Try a bigger nearby city, or enter coordinates manually.",true);}else{setAcStatus(null);renderAc(items);}}catch(e){$("ac").classList.add("hide");setAcStatus("Search couldn't reach the network here. Tap \"Enter coordinates manually\" below.",true);$("manual-coords").classList.remove("hide");}},320);});
