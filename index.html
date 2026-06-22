@@ -316,7 +316,8 @@
     </div>
     <div class="tabs">
       <button class="tab active" data-view="today">Today</button>
-      <button class="tab" data-view="month">Lucky days this month</button>
+      <button class="tab" data-view="month">Lucky days</button>
+      <button class="tab" data-view="horo">Month &amp; Year</button>
     </div>
 
     <div id="view-today">
@@ -353,10 +354,6 @@
       </div>
       <div class="between"><span class="label">Make the most of today</span></div>
       <div class="card"><div id="lifestyle-body"></div></div>
-      <div class="between"><span class="label">Your month ahead</span></div>
-      <div class="card"><div id="month-horo-body"></div></div>
-      <div class="between"><span class="label">Your year ahead</span></div>
-      <div class="card"><div id="year-horo-body"></div></div>
       <div class="between"><span class="label">Lucky windows today</span></div>
       <div class="card"><div id="lucky-tznote" class="dim" style="font-size:12px;margin-bottom:10px"></div><div id="lucky-list"><div class="loading dotpulse">Finding your windows</div></div></div>
 
@@ -399,6 +396,13 @@
         <div class="monthgrid" id="journal-grid"></div>
         <button class="btn ghost" id="journal-export" style="margin-top:14px">Export this month's journal as PDF</button>
       </div>
+    </div>
+
+    <div id="view-horo" class="hide">
+      <div class="between"><span class="label">Your month ahead</span></div>
+      <div class="card"><div id="month-horo-body"><div class="loading dotpulse">Reading your month</div></div></div>
+      <div class="between"><span class="label">Your year ahead</span></div>
+      <div class="card"><div id="year-horo-body"><div class="loading dotpulse">Reading your year</div></div></div>
     </div>
   </section>
 
@@ -817,7 +821,6 @@ function renderDash(){
   renderSkyNow();
   renderJournal(now);
   renderTarot();
-  try{renderMonthlyHoroscope();renderYearlyHoroscope();}catch(e){}
   wireCollapsibles();
 }
 function journalKey(date){const ds=date.toISOString().slice(0,10);return `stellar.journal.${activeId||"x"}.${ds}`;}
@@ -998,7 +1001,7 @@ function renderJournalCalendar(year,mon,daysInMonth,startDow){
   $("journal-grid").querySelectorAll(".jcell").forEach(el=>el.addEventListener("click",()=>{
     const d=+el.dataset.jday;const delta=Math.round((new Date(year,mon,d)-new Date(today.getFullYear(),today.getMonth(),today.getDate()))/86400000);
     if(delta<-7||delta>7){alert("Journal jump works within a week of today. Use the day arrows for older entries.");return;}
-    dayOffset=delta;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelector('.tab[data-view="today"]').classList.add("active");$("view-today").classList.remove("hide");$("view-month").classList.add("hide");renderDash();$("journal-text")&&$("journal-text").scrollIntoView({behavior:"smooth",block:"center"});
+    dayOffset=delta;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelector('.tab[data-view="today"]').classList.add("active");$("view-today").classList.remove("hide");$("view-month").classList.add("hide");$("view-horo")&&$("view-horo").classList.add("hide");renderDash();$("journal-text")&&$("journal-text").scrollIntoView({behavior:"smooth",block:"center"});
   }));
 }
 function exportJournalPDF(){
@@ -1844,14 +1847,14 @@ function renderDailyReadingOffline(){
       :top.aspect.name==="conjunction"?"and it's concentrated and strong today"
       :top.aspect.name==="square"?"and there's friction here that's actually pushing you to grow"
       :top.aspect.name==="opposition"?"and you're being asked to find a balance between two pulls":"today";
-    let body=`The main thread today: ${proc} is moving through ${area}, ${qual}.`;
+    let body=`The main thread today: ${top.transiting} ${aspVerb(top.aspect.name)} your natal ${top.natal==="MC"?"Midheaven":top.natal} — ${proc} moving through ${area}, ${qual}.`;
     // what to actually do with it
     const doNote=harmonic?` This is a good day to lean into ${shortArea(top.natal)} rather than resist it.`
       :top.aspect.luck<0?` Don't force outcomes around ${shortArea(top.natal)} today — work with the tension and it pays off later.`:"";
     body+=doNote;
     // second transit, plainly
     if(cachedAspects[1]){const s=cachedAspects[1];const sproc={Sun:"your confidence",Moon:"your emotions",Mercury:"your thinking",Venus:"your relationships and money",Mars:"your drive",Jupiter:"your sense of opportunity",Saturn:"your responsibilities",Uranus:"your urge for change",Neptune:"your imagination",Pluto:"your deeper drives"}[s.transiting]||"another current";
-      body+=` Underneath that, ${sproc} is also stirred — a quieter second note to the day.`;}
+      body+=` Underneath that, ${s.transiting} ${aspVerb(s.aspect.name)} your ${s.natal==="MC"?"Midheaven":s.natal}, stirring ${sproc} — a quieter second note to the day.`;}
     paras.push(body);
   }else{
     paras.push("A quiet, evenly-paced day.");
@@ -1889,6 +1892,8 @@ function renderDailyReadingOffline(){
 }
 // short life-area label for a natal point
 function shortArea(p){return {Sun:"who you are and how you show up",Moon:"your feelings and home life",Mercury:"talking, thinking, and decisions",Venus:"love, money, and connection",Mars:"action and going after what you want",Jupiter:"growth and opportunities",Saturn:"work and responsibilities",Uranus:"freedom and change",Neptune:"dreams and creativity",Pluto:"deep change and personal power",MC:"your career and public life"}[p]||"this area";}
+// correct present-tense verb form for each aspect
+function aspVerb(name){return {conjunction:"meets",trine:"trines",sextile:"sextiles",square:"squares",opposition:"opposes"}[name]||name+"s";}
 // plain-language meaning of a lucky-window driver
 function luckMeaning(hh){
   const tr=hh.transiting,na=hh.natal;
@@ -2050,7 +2055,7 @@ $("now-place").addEventListener("input",e=>{
   },320);
 });
 $("reroll").addEventListener("click",fetchReading);
-document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{const v=t.dataset.view;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");$("view-today").classList.toggle("hide",v!=="today");$("view-month").classList.toggle("hide",v!=="month");if(v==="today"){if(dayOffset!==0){dayOffset=0;renderDash();}}else if(v==="month"&&!monthRendered){renderMonth();monthRendered=true;}}));
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{const v=t.dataset.view;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");$("view-today").classList.toggle("hide",v!=="today");$("view-month").classList.toggle("hide",v!=="month");$("view-horo").classList.toggle("hide",v!=="horo");if(v==="today"){if(dayOffset!==0){dayOffset=0;renderDash();}}else if(v==="month"&&!monthRendered){renderMonth();monthRendered=true;}else if(v==="horo"){try{renderMonthlyHoroscope();renderYearlyHoroscope();wireCollapsibles();}catch(e){}}}));
 loadProfile();
 window.addEventListener("load",()=>{
   populateDateTime();loadNowLoc();
