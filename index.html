@@ -132,6 +132,9 @@
   .life-past{opacity:.62}
   .life-head{font-family:"SF Mono",monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:14px 0 4px}
   .life-now{text-align:center;color:var(--teal);font-size:12px;letter-spacing:.1em;margin:14px 0;font-family:"SF Mono",monospace}
+  .horo-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px}
+  .horo-title{text-align:center;flex:1;font-size:19px;color:var(--star);font-family:Georgia,serif}
+  .horo-title small{display:block;font-family:"SF Mono",monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-top:3px}
   /* collapsible sections */
   .between.collapsible{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;transition:opacity .15s}
   .between.collapsible:hover{opacity:.8}
@@ -455,6 +458,22 @@ const MAJOR_INGRESS=[
   {date:D(2026,6,29),text:"Jupiter enters Leo — expansion and good fortune move into the realm of heart, creativity, and self-expression."},
 ];
 function within(date,a,b){return date>=a&&date<=b;}
+// 2026 New & Full Moons with sign + degree (from published ephemeris) — for monthly forecasts
+const LUNATIONS=[
+  {date:D(2026,1,3),type:"Full",sign:"Cancer",deg:13},{date:D(2026,1,18),type:"New",sign:"Capricorn",deg:28},
+  {date:D(2026,2,1),type:"Full",sign:"Leo",deg:13},{date:D(2026,2,17),type:"New",sign:"Aquarius",deg:28},
+  {date:D(2026,3,3),type:"Full",sign:"Virgo",deg:12},{date:D(2026,3,18),type:"New",sign:"Pisces",deg:28},
+  {date:D(2026,4,1),type:"Full",sign:"Libra",deg:12},{date:D(2026,4,17),type:"New",sign:"Aries",deg:27},
+  {date:D(2026,5,1),type:"Full",sign:"Scorpio",deg:11},{date:D(2026,5,16),type:"New",sign:"Taurus",deg:25},
+  {date:D(2026,5,31),type:"Full",sign:"Sagittarius",deg:9},{date:D(2026,6,14),type:"New",sign:"Gemini",deg:24},
+  {date:D(2026,6,29),type:"Full",sign:"Capricorn",deg:8},{date:D(2026,7,14),type:"New",sign:"Cancer",deg:21},
+  {date:D(2026,7,29),type:"Full",sign:"Aquarius",deg:6},{date:D(2026,8,12),type:"New",sign:"Leo",deg:20},
+  {date:D(2026,8,28),type:"Full",sign:"Pisces",deg:4},{date:D(2026,9,10),type:"New",sign:"Virgo",deg:18},
+  {date:D(2026,9,26),type:"Full",sign:"Aries",deg:3},{date:D(2026,10,10),type:"New",sign:"Libra",deg:17},
+  {date:D(2026,10,26),type:"Full",sign:"Taurus",deg:2},{date:D(2026,11,9),type:"New",sign:"Scorpio",deg:16},
+  {date:D(2026,11,24),type:"Full",sign:"Gemini",deg:2},{date:D(2026,12,8),type:"New",sign:"Sagittarius",deg:16},
+  {date:D(2026,12,23),type:"Full",sign:"Cancer",deg:2},
+];
 function notableEvents(date){
   const out={retro:[],eclipse:null,ingress:null};
   for(const r of RETROGRADES){if(within(date,r.start,r.end))out.retro.push(r);}
@@ -1916,47 +1935,117 @@ function houseFocus(houseNum){
   // what life-area a transit through this house activates
   return {1:"you, your body, and fresh starts",2:"money, income, and self-worth",3:"communication, learning, and your local world",4:"home, family, and your inner foundation",5:"romance, creativity, and joy",6:"work, health, and daily routine",7:"relationships and partnership",8:"intimacy, shared money, and transformation",9:"travel, study, and the big picture",10:"career, status, and your public life",11:"friends, community, and hopes",12:"rest, spirit, and inner work"}[houseNum]||"this area of life";
 }
+let horoMonthOffset=0, horoYearOffset=0;
+const HOUSE_LONG={
+  1:{area:"yourself, your body, your identity, and fresh personal starts",love:"how you show up and what you project to others",money:"your earning power through personal initiative",career:"your personal brand and how others first see you"},
+  2:{area:"money, income, possessions, and your sense of self-worth",love:"what you value and how security plays into love",money:"income, savings, and your relationship with money itself",career:"earning, raises, and the material rewards of your work"},
+  3:{area:"communication, learning, siblings, and your day-to-day world",love:"flirtation, conversation, and everyday connection",money:"income through writing, ideas, sales, or local work",career:"networking, learning new skills, and getting your message out"},
+  4:{area:"home, family, roots, and your emotional foundation",love:"domestic life and emotional security with a partner",money:"property, family money, and your home base",career:"working from home or laying long-term foundations"},
+  5:{area:"romance, creativity, children, pleasure, and self-expression",love:"romance, dating, passion, and play — the heart of love",money:"income through creativity, speculation, or entertainment",career:"creative projects and work you can put your personality into"},
+  6:{area:"work, health, routine, and the craft of daily life",love:"bonding through shared routines and acts of service",money:"steady income through your job and daily labor",career:"your actual day-to-day work, productivity, and skills"},
+  7:{area:"partnership, marriage, and your closest one-to-one relationships",love:"committed relationships, marriage, and serious partnership",money:"shared finances and money through partnership or clients",career:"business partnerships, collaborations, and negotiations"},
+  8:{area:"intimacy, shared resources, transformation, and deep change",love:"deep intimacy, vulnerability, and merging with another",money:"shared money, debt, investments, taxes, and other people's resources",career:"funding, investments, and transformative career change"},
+  9:{area:"travel, higher learning, beliefs, and the big picture",love:"romance with someone from afar or who expands your world",money:"income through teaching, publishing, travel, or the law",career:"expansion, study, and reaching a wider audience"},
+  10:{area:"career, status, ambition, and your public reputation",love:"how your relationship status intersects with your public life",money:"income through your career and professional standing",career:"your calling, promotions, recognition, and public achievement"},
+  11:{area:"friendships, community, networks, and your hopes for the future",love:"friendships turning to love, and meeting people through groups",money:"income through networks, technology, and collective ventures",career:"professional networks, teams, and long-term goals"},
+  12:{area:"rest, solitude, spirituality, healing, and the inner world",love:"secret or behind-the-scenes connection, and emotional healing",money:"hidden costs, charity, or income through quiet/spiritual work",career:"behind-the-scenes work, research, and rest before a new cycle"},
+};
 function renderMonthlyHoroscope(){
-  if(!cachedAngles){$("month-horo-body").innerHTML=`<p class="dim" style="font-size:14px">Add a birth time to unlock the monthly horoscope (it needs your houses).</p>`;return;}
-  const now=new Date();const cusps=cachedAngles.cusps;
-  const monthName=now.toLocaleDateString(undefined,{month:"long",year:"numeric"});
-  // where the Sun is this month, and which of YOUR houses it lights up
-  const sunLon=eclipticLon("Sun",now);const sunHouse=houseOf(sunLon,cusps);
-  const sunSign=signFromLon(sunLon).sign;
-  // Venus (love/money) and Mars (drive) houses this month
-  const venusHouse=houseOf(eclipticLon("Venus",now),cusps);
-  const marsHouse=houseOf(eclipticLon("Mars",now),cusps);
-  let html=`<p class="dim" style="font-size:13px;margin-bottom:14px">${monthName} — where the sky is moving through your chart this month.</p>`;
-  html+=`<div class="ir-item"><div class="h">The theme this month</div><div class="b">With the Sun moving through your ${ordinal(sunHouse)} house, this month puts the spotlight on ${houseFocus(sunHouse)}. This is where your energy and attention naturally flow for the next few weeks.</div></div>`;
-  html+=`<div class="ir-item"><div class="h">♀ Love & money</div><div class="b">Venus is travelling through your ${ordinal(venusHouse)} house, sweetening ${houseFocus(venusHouse)}. ${venusHouse===5||venusHouse===7?"A warm month for romance and connection.":venusHouse===2||venusHouse===8?"A favorable stretch for money and what you value.":"Affection and ease flow toward that part of your life."}</div></div>`;
-  html+=`<div class="ir-item"><div class="h">♂ Drive & action</div><div class="b">Mars is firing up your ${ordinal(marsHouse)} house, so your energy and push go toward ${houseFocus(marsHouse)}. Channel effort here — it's where you'll have the most force this month.</div></div>`;
-  // any retrograde or eclipse this month
-  const ev=notableEvents(now);
-  if(ev.retro.length){const r=ev.retro[0];html+=`<div class="ir-item"><div class="h">Watch for</div><div class="b">${r.planet} is retrograde in ${r.sign} this month — a time to review and revisit rather than rush forward in matters it touches.</div></div>`;}
+  if(!cachedAngles){$("month-horo-body").innerHTML=`<p class="dim" style="font-size:14px">Add a birth time to unlock the monthly horoscope — it needs your houses.</p>`;return;}
+  const cusps=cachedAngles.cusps;
+  const base=new Date();base.setDate(15);base.setMonth(base.getMonth()+horoMonthOffset);
+  const year=base.getFullYear(),mon=base.getMonth();
+  const monthStart=new Date(year,mon,1), monthEnd=new Date(year,mon+1,0,23,59);
+  const monthName=base.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  const rel=horoMonthOffset===0?"this month":horoMonthOffset===-1?"last month":horoMonthOffset===1?"next month":monthName;
+  // mid-month positions (representative)
+  const mid=new Date(year,mon,15,12);
+  const sunHouse=houseOf(eclipticLon("Sun",mid),cusps);
+  const venusHouse=houseOf(eclipticLon("Venus",mid),cusps);
+  const marsHouse=houseOf(eclipticLon("Mars",mid),cusps);
+  const mercHouse=houseOf(eclipticLon("Mercury",mid),cusps);
+  const S=HOUSE_LONG[sunHouse],V=HOUSE_LONG[venusHouse],M=HOUSE_LONG[marsHouse],Me=HOUSE_LONG[mercHouse];
+  // lunations this month
+  const moons=LUNATIONS.filter(l=>l.date>=monthStart&&l.date<=monthEnd);
+  // header + nav
+  let html=`<div class="horo-nav"><button class="day-nav" id="hm-prev">‹</button><div class="horo-title">${monthName}<small>${rel==="this month"?"this month":rel}</small></div><button class="day-nav" id="hm-next">›</button></div>`;
+  // overview
+  html+=`<div class="ir-item"><div class="h">The arc of ${rel}</div><div class="b">The Sun moves through your ${ordinal(sunHouse)} house ${rel==="last month"?"this past month":rel}, so your energy, focus, and vitality center on ${S.area}. This is the life area lit up most strongly — where you'll spend your attention and where events tend to cluster. Treat it as the month's main stage.</div></div>`;
+  // lunations
+  if(moons.length){
+    html+=`<div class="ir-item"><div class="h">🌑🌕 The Moon's turning points</div><div class="b">`+moons.map(l=>{
+      const lh=houseOf(l.deg+ZODIAC.indexOf(l.sign)*30,cusps);
+      const LH=HOUSE_LONG[lh];
+      if(l.type==="New")return `The <b>New Moon in ${l.sign}</b> (${l.date.toLocaleDateString(undefined,{month:"short",day:"numeric"})}) falls in your ${ordinal(lh)} house — a fresh start around ${LH.area}. Set intentions here; this seeds the next 4–6 weeks.`;
+      return `The <b>Full Moon in ${l.sign}</b> (${l.date.toLocaleDateString(undefined,{month:"short",day:"numeric"})}) lands in your ${ordinal(lh)} house — a culmination or turning point around ${LH.area}. Something comes to a head or completes.`;
+    }).join("<br><br>")+`</div></div>`;
+  }
+  // love
+  html+=`<div class="ir-item"><div class="h">♥ Love & connection</div><div class="b">Venus travels through your ${ordinal(venusHouse)} house ${rel}, bringing warmth and ease to ${V.love}. ${venusHouse===5?"This is one of the most romantic placements of the year for you — lean into dating, flirtation, and joy.":venusHouse===7?"A standout month for partnership — existing bonds deepen and new ones can form.":venusHouse===1?"You're especially magnetic now — others are drawn to you, so put yourself out there.":"Affection flows toward that corner of your life; nurture it."} ${mercHouse===venusHouse?"Mercury joins Venus here, so conversations and connection align beautifully.":""}</div></div>`;
+  // money
+  html+=`<div class="ir-item"><div class="h">$ Money & resources</div><div class="b">With Mars driving your ${ordinal(marsHouse)} house and the Sun in your ${ordinal(sunHouse)}, the financial focus ${rel} is ${M.money} and ${S.money}. ${marsHouse===2||sunHouse===2?"A strong month to push on income and earning — your effort directly grows your resources.":marsHouse===8||sunHouse===8?"Shared finances, investments, or another's resources are active — handle them deliberately.":"Money matters tie into where your energy is going; spend and earn with intention."}</div></div>`;
+  // career
+  html+=`<div class="ir-item"><div class="h">▲ Career & drive</div><div class="b">Mars energizes your ${ordinal(marsHouse)} house ${rel}, so your push and ambition go toward ${M.career}. This is where you'll have the most force and motivation — aim your effort here. ${marsHouse===10?"Career is front and center; a powerful month to go after recognition or a goal.":mercHouse===10?"Your ideas and communication around career are sharp — pitch and speak up.":""}</div></div>`;
+  // retrogrades / eclipses across the month
+  const evMid=notableEvents(mid);const evStart=notableEvents(monthStart);
+  const retros=[...new Set([...evMid.retro,...evStart.retro].map(r=>r.planet+" in "+r.sign))];
+  if(retros.length)html+=`<div class="ir-item"><div class="h">⟲ Retrogrades to work with</div><div class="b">${retros.map(r=>{const p=r.split(" in ")[0];return `${r} — ${p==="Mercury"?"slow down around messages, contracts, and tech; review rather than launch":p==="Venus"?"old loves and money matters resurface; reassess what you value":p==="Mars"?"energy turns inward; refine your approach before pushing":"revisit and refine in this area"}.`;}).join(" ")}</div></div>`;
+  // eclipse this month?
+  const ecl=ECLIPSES.find(e=>e.date>=monthStart&&e.date<=monthEnd);
+  if(ecl){const eh=houseOf(parseInt(ecl.deg)+ZODIAC.indexOf(ecl.sign)*30,cusps);html+=`<div class="ir-item"><div class="h">☉☾ Eclipse season</div><div class="b">A <b>${ecl.kind}</b> in ${ecl.sign} falls in your ${ordinal(eh)} house ${rel}. Eclipses accelerate fate — expect a meaningful beginning or ending around ${HOUSE_LONG[eh].area}. Don't force; let the shift happen.</div></div>`;}
   $("month-horo-body").innerHTML=html;
+  const p=$("hm-prev"),n=$("hm-next");
+  if(p)p.addEventListener("click",()=>{horoMonthOffset--;renderMonthlyHoroscope();});
+  if(n)n.addEventListener("click",()=>{horoMonthOffset++;renderMonthlyHoroscope();});
 }
 function renderYearlyHoroscope(){
   if(!cachedAngles){$("year-horo-body").innerHTML=`<p class="dim" style="font-size:14px">Add a birth time to unlock the yearly horoscope.</p>`;return;}
-  const now=new Date();const year=now.getFullYear();const cusps=cachedAngles.cusps;
-  // Jupiter (the year's luck) — which house it spends most of the year in
-  const midYear=new Date(year,6,1);
-  const jupHouse=houseOf(eclipticLon("Jupiter",midYear),cusps);
-  const satHouse=houseOf(eclipticLon("Saturn",midYear),cusps);
-  let html=`<p class="dim" style="font-size:13px;margin-bottom:14px">${year} — the big themes shaping your year.</p>`;
-  html+=`<div class="ir-item"><div class="h">✦ Where your luck grows (Jupiter)</div><div class="b">Jupiter spends much of ${year} in your ${ordinal(jupHouse)} house, expanding ${houseFocus(jupHouse)}. This is your area of growth and opportunity this year — say yes to what opens up here, and reach higher than usual.</div></div>`;
-  html+=`<div class="ir-item"><div class="h">♄ Where you're building (Saturn)</div><div class="b">Saturn works through your ${ordinal(satHouse)} house, asking for patience and real effort around ${houseFocus(satHouse)}. It can feel heavy, but what you build here this year becomes lasting and solid. Don't avoid it — master it.</div></div>`;
-  // love / money / career angle for the year
-  const loveHouse=jupHouse===5||jupHouse===7||satHouse===5||satHouse===7;
-  const moneyHouse=jupHouse===2||jupHouse===8||satHouse===2||satHouse===8;
-  const careerHouse=jupHouse===10||jupHouse===6||satHouse===10||satHouse===6;
-  let focus=[];
-  if(loveHouse)focus.push("relationships are a major storyline this year");
-  if(moneyHouse)focus.push("money and resources are in focus");
-  if(careerHouse)focus.push("career and work take center stage");
-  if(focus.length)html+=`<div class="ir-item"><div class="h">The headline</div><div class="b">For you, ${focus.join(", and ")} in ${year}.</div></div>`;
-  // major 2026 events
-  html+=`<div class="ir-item"><div class="h">Rare shifts in ${year}</div><div class="b">${year===2026?"This is a landmark year in the sky: Saturn enters Aries, Neptune joins it at 0° Aries (a rare meeting of dream and reality), Uranus settles into Gemini for seven years, and Jupiter moves into Leo mid-year. Big, generational change is in the air.":"The outer planets continue their slow, generational movements, reshaping the deeper currents of your life."}</div></div>`;
+  const cusps=cachedAngles.cusps;
+  const year=new Date().getFullYear()+horoYearOffset;
+  const rel=horoYearOffset===0?"this year":horoYearOffset===-1?"last year":horoYearOffset===1?"next year":`${year}`;
+  // sample Jupiter & Saturn houses across the year (they may change house mid-year)
+  const jan=new Date(year,0,15),jul=new Date(year,6,15),dec=new Date(year,11,15);
+  const jupJan=houseOf(eclipticLon("Jupiter",jan),cusps),jupJul=houseOf(eclipticLon("Jupiter",jul),cusps),jupDec=houseOf(eclipticLon("Jupiter",dec),cusps);
+  const satJan=houseOf(eclipticLon("Saturn",jan),cusps),satJul=houseOf(eclipticLon("Saturn",jul),cusps);
+  const jupHouses=[...new Set([jupJan,jupJul,jupDec])];
+  let html=`<div class="horo-nav"><button class="day-nav" id="hy-prev">‹</button><div class="horo-title">${year}<small>${rel}</small></div><button class="day-nav" id="hy-next">›</button></div>`;
+  html+=`<div class="ir-item"><div class="h">The feeling of ${rel==="this year"?year:rel}</div><div class="b">Think of this as a weather report for ${year} — not fixed events, but the prevailing currents. The slow planets set the deep themes, while Jupiter and Saturn mark where you grow and where you build.</div></div>`;
+  // Jupiter — growth
+  if(jupHouses.length===1){
+    const J=HOUSE_LONG[jupHouses[0]];
+    html+=`<div class="ir-item"><div class="h">✦ Where you grow (Jupiter)</div><div class="b">Jupiter spends ${rel==="this year"?"":rel+" "}all of ${year} in your ${ordinal(jupHouses[0])} house, expanding ${J.area}. This is your zone of luck and opportunity — the area that opens up, grows, and rewards boldness. Say yes here, learn here, and reach beyond your comfort zone. ${jupHouses[0]===10?"With Jupiter in your career house, this is one of the best professional years of your 12-year cycle.":jupHouses[0]===7?"With Jupiter in your partnership house, relationships and marriage are richly favored.":jupHouses[0]===2?"With Jupiter in your money house, this is a strong year for growing income and resources.":""}</div></div>`;
+  }else{
+    const J1=HOUSE_LONG[jupJan],J2=HOUSE_LONG[jupDec];
+    html+=`<div class="ir-item"><div class="h">✦ Where you grow (Jupiter)</div><div class="b">Jupiter shifts houses ${rel}: it begins the year expanding ${J1.area} (your ${ordinal(jupJan)} house), then moves on to grow ${J2.area} (your ${ordinal(jupDec)} house) later in ${year}. The first half rewards effort in one area of life; the second opens a fresh field of opportunity. Two distinct chapters of luck.</div></div>`;
+  }
+  // Saturn — building
+  const Sa=HOUSE_LONG[satJul];
+  html+=`<div class="ir-item"><div class="h">♄ Where you build (Saturn)</div><div class="b">Saturn works through your ${ordinal(satJul)} house ${rel}, asking for patience, structure, and real effort around ${Sa.area}. This can feel heavy or slow — like pressure or extra responsibility — but it's how you build something genuinely lasting here. Don't avoid the weight; the discipline you bring now pays off for years. ${satJul===10?"In your career house, this is a make-or-break chapter for your ambitions — serious work brings serious, lasting rewards.":satJul===7?"In your partnership house, relationships get tested and the real ones become permanent.":""}</div></div>`;
+  // love / money / career synthesis
+  const inHouse=(h,arr)=>arr.includes(h);
+  const loveActive=[5,7].some(h=>jupHouses.includes(h)||satJul===h);
+  const moneyActive=[2,8].some(h=>jupHouses.includes(h)||satJul===h);
+  const careerActive=[6,10].some(h=>jupHouses.includes(h)||satJul===h);
+  let lines=[];
+  if(loveActive)lines.push(`<b>Love:</b> a major relationship year — ${jupHouses.includes(5)||jupHouses.includes(7)?"Jupiter brings growth, warmth, and opportunity in love":"Saturn asks you to get serious and commit, or release what isn't working"}.`);
+  if(moneyActive)lines.push(`<b>Money:</b> resources are a central story — ${jupHouses.includes(2)||jupHouses.includes(8)?"Jupiter favors growing your income or shared finances":"Saturn demands financial discipline that builds lasting security"}.`);
+  if(careerActive)lines.push(`<b>Career:</b> work takes center stage — ${jupHouses.includes(10)||jupHouses.includes(6)?"Jupiter brings advancement and recognition":"Saturn is building your authority and reputation through hard, steady effort"}.`);
+  if(!lines.length)lines.push("This year leans more personal and internal than externally dramatic in love, money, or career — a season of quieter, foundational growth.");
+  html+=`<div class="ir-item"><div class="h">Love, money & career headline</div><div class="b">${lines.join("<br><br>")}</div></div>`;
+  // eclipses for the year
+  const yearEcl=ECLIPSES.filter(e=>e.date.getFullYear()===year);
+  if(yearEcl.length){
+    html+=`<div class="ir-item"><div class="h">☉☾ The year's eclipses</div><div class="b">`+yearEcl.map(e=>{const eh=houseOf(parseInt(e.deg)+ZODIAC.indexOf(e.sign)*30,cusps);return `<b>${e.date.toLocaleDateString(undefined,{month:"short"})} — ${e.kind} in ${e.sign}</b>, in your ${ordinal(eh)} house: a fated beginning or ending around ${HOUSE_LONG[eh].area}.`;}).join("<br><br>")+`</div></div>`;
+  }
+  // rare ingresses for the year
+  const yearIngress=MAJOR_INGRESS.filter(m=>m.date.getFullYear()===year);
+  if(yearIngress.length){
+    html+=`<div class="ir-item"><div class="h">⟴ Rare, generational shifts</div><div class="b">${yearIngress.map(m=>m.text).join("<br><br>")}<br><br>These are slow, once-in-a-generation movements — they reshape the deep background of life for everyone, and especially the houses they touch in your chart.</div></div>`;
+  }
   $("year-horo-body").innerHTML=html;
+  const p=$("hy-prev"),n=$("hy-next");
+  if(p)p.addEventListener("click",()=>{horoYearOffset--;renderYearlyHoroscope();});
+  if(n)n.addEventListener("click",()=>{horoYearOffset++;renderYearlyHoroscope();});
 }
 
 
@@ -2055,7 +2144,7 @@ $("now-place").addEventListener("input",e=>{
   },320);
 });
 $("reroll").addEventListener("click",fetchReading);
-document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{const v=t.dataset.view;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");$("view-today").classList.toggle("hide",v!=="today");$("view-month").classList.toggle("hide",v!=="month");$("view-horo").classList.toggle("hide",v!=="horo");if(v==="today"){if(dayOffset!==0){dayOffset=0;renderDash();}}else if(v==="month"&&!monthRendered){renderMonth();monthRendered=true;}else if(v==="horo"){try{renderMonthlyHoroscope();renderYearlyHoroscope();wireCollapsibles();}catch(e){}}}));
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{const v=t.dataset.view;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");$("view-today").classList.toggle("hide",v!=="today");$("view-month").classList.toggle("hide",v!=="month");$("view-horo").classList.toggle("hide",v!=="horo");if(v==="today"){if(dayOffset!==0){dayOffset=0;renderDash();}}else if(v==="month"&&!monthRendered){renderMonth();monthRendered=true;}else if(v==="horo"){horoMonthOffset=0;horoYearOffset=0;try{renderMonthlyHoroscope();renderYearlyHoroscope();wireCollapsibles();}catch(e){}}}));
 loadProfile();
 window.addEventListener("load",()=>{
   populateDateTime();loadNowLoc();
