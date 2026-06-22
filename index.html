@@ -89,7 +89,9 @@
   .pm-edit{color:var(--teal);background:none;border:none;cursor:pointer;font-size:12px;opacity:.6;padding:4px 8px}
   .pm-edit:hover{opacity:1}
   .datehead{display:flex;align-items:center;gap:10px}
-  .day-nav{background:#0c1120;border:1px solid var(--line);color:var(--gold);width:38px;height:38px;border-radius:50%;font-size:22px;line-height:1;cursor:pointer;flex:0 0 38px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+  .day-nav{background:#141b30;border:1px solid var(--gold-soft);color:var(--gold);width:42px;height:42px;border-radius:50%;font-size:24px;line-height:1;cursor:pointer;flex:0 0 42px;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:all .15s}
+  .day-nav:hover{background:var(--gold);color:#1a1206;transform:scale(1.05)}
+  .day-nav:active{transform:scale(.95)}
   .day-nav:hover{border-color:var(--gold)}
   .day-nav.disabled{opacity:.3;pointer-events:none}
   #journal-text{width:100%;background:#0c1120;border:1px solid var(--line);border-radius:12px;color:var(--star);font:inherit;font-size:15px;line-height:1.5;padding:12px;resize:vertical;outline:none;box-sizing:border-box}
@@ -314,7 +316,7 @@
       <div class="topbar-right"><button class="linkbtn" id="view-chart">view full chart</button><button class="pcorner" id="pcorner-dash"></button></div></div>
     <div class="datehead" id="datehead">
       <button class="day-nav" id="day-prev" aria-label="Previous day">‹</button>
-      <div style="flex:1"><div class="label" id="greeting">Good morning</div><div class="d" id="today-date"></div><div class="dim" id="dash-profile-name" style="font-size:13px;margin-top:2px"></div></div>
+      <div style="flex:1"><div class="label" id="greeting">Good morning</div><div class="d" id="today-date"></div><div class="dim" id="dash-profile-name" style="font-size:13px;margin-top:2px"></div><div class="dim daynav-hint" style="font-size:11px;margin-top:3px;opacity:.55">use ‹ › or arrow keys to change day</div></div>
       <button class="day-nav" id="day-next" aria-label="Next day">›</button>
     </div>
     <div class="tabs">
@@ -2069,6 +2071,16 @@ $("pmenu-add").addEventListener("click",()=>{closeProfileMenu();startNewProfile(
 function goDay(delta){const nv=dayOffset+delta;if(nv<-7||nv>7)return;dayOffset=nv;renderDash();}
 $("day-prev").addEventListener("click",()=>goDay(-1));
 $("day-next").addEventListener("click",()=>goDay(1));
+// keyboard arrows move between days on desktop (only when Today view is active and not typing)
+document.addEventListener("keydown",e=>{
+  if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
+  const dashVisible=!$("dash").classList.contains("hide");
+  const onToday=!$("view-today").classList.contains("hide");
+  const typing=/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement||{}).tagName||"");
+  if(!dashVisible||!onToday||typing)return;
+  e.preventDefault();
+  goDay(e.key==="ArrowLeft"?-1:1);
+});
 $("journal-save").addEventListener("click",saveJournal);
 $("journal-export").addEventListener("click",exportJournalPDF);
 // swipe left/right on the Today view to change days
