@@ -139,6 +139,14 @@
   .horo-title small{display:block;font-family:"SF Mono",monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-top:3px}
   .trilegend{display:flex;justify-content:center;gap:16px;font-size:12px;font-family:"SF Mono",monospace;margin-top:6px}
   .tl-nat{color:#e8e8f0}.tl-prog{color:#7fc8c4}.tl-trans{color:#d98a9e}
+  .decade{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+  .decade-now{border-color:var(--gold-soft);background:rgba(232,201,122,.05)}
+  .decade-head{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;cursor:pointer;font-size:15px;color:var(--star);user-select:none}
+  .decade-head:hover{background:rgba(255,255,255,.03)}
+  .decade-meta{font-size:12px;color:var(--dim);font-family:"SF Mono",monospace;display:flex;align-items:center;gap:6px}
+  .dchev{transition:transform .2s;display:inline-block}
+  .decade-head.open .dchev{transform:rotate(180deg)}
+  .decade-body{padding:0 14px 10px}
   /* collapsible sections */
   .between.collapsible{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;transition:opacity .15s}
   .between.collapsible:hover{opacity:.8}
@@ -614,6 +622,9 @@ function drawWheelInto(svgId,natal,angles){
     const[px,py]=pt(rP,draw),[tx,ty]=pt(rZ-2,natal[p.key]),[mx,my]=pt(rZ-10,natal[p.key]);
     s+=`<line x1="${tx}" y1="${ty}" x2="${mx}" y2="${my}" stroke="rgba(180,196,255,.4)" stroke-width=".7"/>`;
     s+=`<text x="${px}" y="${py+5}" text-anchor="middle" font-size="15" class="glyph">${p.glyph}</text>`;
+    // exact degree-in-sign just inside the glyph
+    const sf=signFromLon(natal[p.key]);const[ddx,ddy]=pt(rP-13,draw);
+    s+=`<text x="${ddx}" y="${ddy+3}" text-anchor="middle" font-size="8.5" fill="#9fb0d8" font-family="SF Mono,monospace">${Math.floor(sf.degInSign)}°</text>`;
   }
   svg.innerHTML=s;
 }
@@ -768,22 +779,26 @@ function drawTriWheel(svgId,natal,angles,prog,transit){
     const[mx,my]=pt(rZ,angles.mc),[ix,iy]=pt(rZ,norm360(angles.mc+180));s+=`<line x1="${mx}" y1="${my}" x2="${ix}" y2="${iy}" stroke="#e8c97a" stroke-width="1.2" opacity=".6"/>`;
   }
   // helper to place a ring of planets
-  const ring=(chart,r,color,cls)=>{
+  const ring=(chart,r,color,cls,degR)=>{
     if(!chart)return;
     const placed=[];
     for(const p of PLANETS){if(chart[p.key]==null)continue;let draw=chart[p.key];
       // simple declutter
       for(const q of placed){let d=Math.abs(draw-q)%360;if(d>180)d=360-d;if(d<7)draw=norm360(draw+7);}
       placed.push(draw);
-      const[px,py]=pt(r,draw);const[tx,ty]=pt(r,chart[p.key]);const[tox,toy]=pt(r+10,chart[p.key]);
+      const sf=signFromLon(chart[p.key]);const deg=Math.floor(sf.degInSign);
+      const[px,py]=pt(r,draw);const[tx,ty]=pt(r,chart[p.key]);const[tox,toy]=pt(r+9,chart[p.key]);
       s+=`<line x1="${tx}" y1="${ty}" x2="${tox}" y2="${toy}" stroke="${color}" stroke-width=".6" opacity=".5"/>`;
       s+=`<text x="${px}" y="${py+4}" text-anchor="middle" font-size="12" fill="${color}" class="${cls}">${p.glyph}</text>`;
+      // degree number, just inside the glyph toward the hub
+      const[dx,dy]=pt(degR,draw);
+      s+=`<text x="${dx}" y="${dy+3}" text-anchor="middle" font-size="8" fill="${color}" opacity=".85" font-family="SF Mono,monospace">${deg}°</text>`;
     }
   };
-  // natal (outer ring, gold), progressed (middle, teal), transit (inner, rose)
-  ring(natal,rNat,"#e8e8f0","tw-nat");
-  ring(prog,rProg,"#7fc8c4","tw-prog");
-  ring(transit,rTrans,"#d98a9e","tw-trans");
+  // natal (white), progressed (teal), transit (rose) — degree numbers sit just inside each glyph
+  ring(natal,rNat,"#e8e8f0","tw-nat",rNat-13);
+  ring(prog,rProg,"#7fc8c4","tw-prog",rProg-13);
+  ring(transit,rTrans,"#d98a9e","tw-trans",rTrans-13);
   svg.innerHTML=s;
 }
 function computeChartData(){
@@ -997,42 +1012,62 @@ function aspectFlavor(h){
 }
 
 /* compute lucky time-windows for ANY day; returns array of {time,end,peak,score,hits} */
+/* LUCKY TIMES = when the moving local Midheaven reaches your natal Jupiter's degree.
+   The MC cycles the full zodiac (~360°) once per day, so it crosses any given degree
+   briefly once daily — and it depends on your exact location. Computed at nowLoc. */
+function mcAt(date,lat,lon){const a=computeAngles(date,lat,lon);return a?a.mc:null;}
 function luckyWindowsForDay(refDate,maxWindows){
+  // needs a location to compute the local MC
+  const loc=(nowLoc&&nowLoc.lat!=null)?nowLoc:(profile&&profile.lat!=null?{lat:profile.lat,lng:profile.lng,name:profile.placeName}:null);
+  if(!loc||cachedNatal.Jupiter==null)return [];
+  const jup=cachedNatal.Jupiter; // e.g. 5° Scorpio
   const start=new Date(refDate);start.setHours(0,0,0,0);
-  const samples=[];
-  for(let m=0;m<24*60;m+=15){const d=new Date(start.getTime()+m*60000);samples.push({t:d,score:mcLuckScore(cachedAngles,d).score});}
-  const mean=samples.reduce((a,b)=>a+b.score,0)/samples.length;
-  const peaks=[];
-  for(let i=1;i<samples.length-1;i++){if(samples[i].score>=samples[i-1].score&&samples[i].score>=samples[i+1].score&&samples[i].score>mean+0.25)peaks.push(samples[i]);}
-  peaks.sort((a,b)=>b.score-a.score);
-  const chosen=[];for(const p of peaks){if(chosen.every(c=>Math.abs(c.t-p.t)>75*60000))chosen.push(p);if(chosen.length>=(maxWindows||4))break;}
-  chosen.sort((a,b)=>a.t-b.t);
-  return chosen.map(c=>{
-    // window = ±45min around the peak; peak is the exact best minute
-    const time=new Date(c.t.getTime()-45*60000),end=new Date(c.t.getTime()+45*60000);
-    const hits=mcLuckScore(cachedAngles,c.t).hits.filter(h=>h.aspect.luck>0).slice(0,2);
-    return {time,end,peak:c.t,score:c.score,hits};
+  // scan the whole day in 2-min steps, find where moving MC is closest to natal Jupiter
+  let prevDiff=null,crossings=[];
+  for(let m=0;m<=24*60;m+=2){
+    const d=new Date(start.getTime()+m*60000);
+    const mc=mcAt(d,loc.lat,loc.lng);if(mc==null)continue;
+    let diff=Math.abs(mc-jup)%360;if(diff>180)diff=360-diff;
+    if(prevDiff!=null&&prevDiff.diff<diff && prevDiff.diff<2){
+      if(crossings.every(c=>Math.abs(c.peak-prevDiff.d)>60*60000))crossings.push({peak:prevDiff.d,diff:prevDiff.diff});
+    }
+    prevDiff={d,diff};
+  }
+  // refine each crossing to the nearest minute
+  return crossings.slice(0,maxWindows||2).map(c=>{
+    // narrow search ±4 min around the coarse peak
+    let fineBest={d:c.peak,diff:c.diff};
+    for(let s=-240;s<=240;s+=20){const d=new Date(c.peak.getTime()+s*1000);const mc=mcAt(d,loc.lat,loc.lng);if(mc==null)continue;let diff=Math.abs(mc-jup)%360;if(diff>180)diff=360-diff;if(diff<fineBest.diff)fineBest={d,diff};}
+    const peak=fineBest.d;
+    // the MC is within ~1° of Jupiter for roughly ±4 minutes
+    const time=new Date(peak.getTime()-4*60000),end=new Date(peak.getTime()+4*60000);
+    return {time,end,peak,jupLon:jup};
   });
 }
 function computeLuckyWindows(refDate){
-  // timezone note: times are shown in the device's local zone
   const tzName=Intl.DateTimeFormat().resolvedOptions().timeZone||"your local time";
   const note=$("lucky-tznote");
+  const haveLoc=(nowLoc&&nowLoc.lat!=null)||(profile&&profile.lat!=null);
+  const jSign=cachedNatal.Jupiter!=null?signFromLon(cachedNatal.Jupiter):null;
   if(note){
-    if(nowLoc&&nowLoc.name){note.innerHTML=`Times shown for <b style="color:var(--star)">${escapeHtml(nowLoc.name)}</b> (${tzName.replace(/_/g," ")}).`;}
-    else{note.innerHTML=`Times shown in your device's timezone (${tzName.replace(/_/g," ")}). <a href="#" id="lucky-setloc" style="color:var(--teal)">Set your location</a> for results tuned to exactly where you are.`;const sl=$("lucky-setloc");if(sl)sl.addEventListener("click",e=>{e.preventDefault();$("now-loc-form")&&$("now-loc-form").classList.remove("hide");$("now-place")&&$("now-place").focus();$("now-loc-form")&&$("now-loc-form").scrollIntoView({behavior:"smooth",block:"center"});});}
+    if(!haveLoc){
+      note.innerHTML=`Your lucky moments depend on your location. <a href="#" id="lucky-setloc" style="color:var(--teal)">Set your location</a> to see exactly when they fall today.`;
+      const sl=$("lucky-setloc");if(sl)sl.addEventListener("click",e=>{e.preventDefault();$("now-loc-form")&&$("now-loc-form").classList.remove("hide");$("now-place")&&$("now-place").focus();$("now-loc-form")&&$("now-loc-form").scrollIntoView({behavior:"smooth",block:"center"});});
+    }else{
+      const locName=(nowLoc&&nowLoc.name)?nowLoc.name:(profile&&profile.placeName?profile.placeName:"your location");
+      note.innerHTML=`Your lucky window is when the rising Midheaven reaches your natal Jupiter${jSign?` at <b style="color:var(--star)">${Math.floor(jSign.degInSign)}° ${jSign.sign}</b>`:""} — computed for <b style="color:var(--star)">${escapeHtml(locName)}</b> (${tzName.replace(/_/g," ")}).`;
+    }
   }
-  const wins=luckyWindowsForDay(refDate,4);
-  if(!wins.length){$("lucky-list").innerHTML=`<div class="dim" style="font-size:14px">No standout windows ${dayOffset===0?"today":"this day"} — the energy's even. Move with your own rhythm.</div>`;luckyWindowsForPrompt=[];return;}
+  if(!haveLoc){$("lucky-list").innerHTML=`<div class="dim" style="font-size:14px">Set your location above to reveal your lucky times.</div>`;luckyWindowsForPrompt=[];return;}
+  const wins=luckyWindowsForDay(refDate,3);
+  if(!wins.length){$("lucky-list").innerHTML=`<div class="dim" style="font-size:14px">The Midheaven crossing falls outside today's window here, or your chart is missing Jupiter. Try another day.</div>`;luckyWindowsForPrompt=[];return;}
   luckyWindowsForPrompt=wins;
   $("lucky-list").innerHTML=wins.map(w=>luckyRowHtml(w)).join("");
 }
 function luckyRowHtml(w){
-  const stars="★".repeat(Math.min(3,Math.max(1,Math.round(w.score/3))));
   const peakStr=w.peak.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
-  const why=w.hits.length?w.hits.map(h=>`${h.transiting} ${h.aspect.name} ${h.natal==="MC"?"MC":h.natal}`).join(" + "):"harmonious sky";
-  const flavor=w.hits.length?aspectFlavor(w.hits[0]):"A naturally easy stretch.";
-  return `<div class="lucky"><div class="win">${fmtRange(w.time,w.end)}<small class="peak">peak ${peakStr}</small></div><div class="why">${flavor}<small>${why} · <span class="star">${stars}</span></small></div></div>`;
+  const jSign=signFromLon(w.jupLon);
+  return `<div class="lucky"><div class="win">${fmtRange(w.time,w.end)}<small class="peak">peak ${peakStr}</small></div><div class="why">The Midheaven crosses your natal Jupiter (${Math.floor(jSign.degInSign)}° ${jSign.sign}) — your fortune point is angular and switched on. A blessed window to ask, launch, or put yourself forward.<small>MC ☌ natal Jupiter · <span class="star">★★★</span></small></div></div>`;
 }
 
 function renderMonth(){
@@ -1504,19 +1539,57 @@ function INTERP_LONG(planet,sign){
 /* progression meanings — what the progressed planets say about who you're becoming */
 const PROG_SUN={Aries:"stepping into more boldness, independence, and a pioneering spirit",Taurus:"settling into steadiness, patience, and building lasting security",Gemini:"opening up to curiosity, communication, and mental variety",Cancer:"turning toward home, emotional depth, and nurturing",Leo:"growing into confidence, creativity, and self-expression",Virgo:"refining your skills, becoming more discerning and of service",Libra:"learning balance, partnership, and the art of relationship",Scorpio:"deepening into intensity, transformation, and emotional truth",Sagittarius:"expanding toward freedom, meaning, and bigger horizons",Capricorn:"maturing into ambition, discipline, and real responsibility",Aquarius:"becoming more independent, original, and future-focused",Pisces:"softening into compassion, imagination, and spiritual sensitivity"};
 const PROG_MOON={Aries:"your emotional life craves action, independence, and new beginnings right now",Taurus:"you need stability, comfort, and grounding in this emotional season",Gemini:"you're emotionally restless and curious, needing variety and connection",Cancer:"you're in a tender, home-focused, nurturing emotional phase",Leo:"you want to be seen, loved, and creatively expressed emotionally now",Virgo:"you find emotional comfort in order, usefulness, and tending to details",Libra:"you crave harmony, partnership, and beauty in this emotional chapter",Scorpio:"you're in a deep, intense, transformative emotional period",Sagittarius:"you need freedom, adventure, and meaning to feel emotionally alive",Capricorn:"you're emotionally serious and focused on building something lasting",Aquarius:"you need space, friendship, and independence emotionally now",Pisces:"you're in a dreamy, sensitive, compassionate emotional season"};
+const PROG_INNER={
+  Mercury:{Aries:"think and speak more directly and decisively",Taurus:"think more deliberately and practically",Gemini:"become mentally quicker and more curious",Cancer:"think more intuitively and from feeling",Leo:"express ideas more boldly and creatively",Virgo:"think more analytically and precisely",Libra:"weigh both sides and seek mental balance",Scorpio:"think more deeply and probingly",Sagittarius:"think bigger and more philosophically",Capricorn:"think more strategically and seriously",Aquarius:"think more originally and independently",Pisces:"think more imaginatively and intuitively"},
+  Venus:{Aries:"love more boldly and directly",Taurus:"value stability and sensual comfort in love",Gemini:"seek mental connection and variety in love",Cancer:"love more tenderly and protectively",Leo:"love more warmly and dramatically",Virgo:"show love through care and devotion",Libra:"seek harmony and partnership",Scorpio:"love more intensely and deeply",Sagittarius:"seek freedom and adventure in love",Capricorn:"love more seriously and for keeps",Aquarius:"love more freely and unconventionally",Pisces:"love more romantically and selflessly"},
+  Mars:{Aries:"act more boldly and assertively",Taurus:"pursue goals with steady persistence",Gemini:"channel energy into ideas and words",Cancer:"act more from emotion and instinct",Leo:"pursue what you want with confidence and flair",Virgo:"work more methodically and efficiently",Libra:"act through cooperation and diplomacy",Scorpio:"pursue goals with intense focus",Sagittarius:"chase freedom and big adventures",Capricorn:"drive toward ambition with discipline",Aquarius:"act on original, independent impulses",Pisces:"act more intuitively and compassionately"},
+};
+function progressedAtAge(p,extraYears){
+  // progressed chart for (current age + extraYears): birth + that many days
+  const birth=buildBirthDate(p);
+  const now=new Date();
+  const ageYears=(now-birth)/(365.25*24*3600*1000)+extraYears;
+  return computeChart(new Date(birth.getTime()+ageYears*24*3600*1000));
+}
 function renderTriWheel(){
   if(!window.Astronomy||!profile){$("triwheel-section").classList.add("hide");return;}
   try{
     const prog=computeProgressed(profile);
     const transit=computeChart(new Date());
     drawTriWheel("tri-wheel",cachedNatal,cachedAngles,prog,transit);
-    // interpretation
     const pSun=signFromLon(prog.Sun),pMoon=signFromLon(prog.Moon),nSun=signFromLon(cachedNatal.Sun);
+    const pMerc=signFromLon(prog.Mercury),pVen=signFromLon(prog.Venus),pMars=signFromLon(prog.Mars);
     const birth=buildBirthDate(profile);const age=Math.floor((new Date()-birth)/(365.25*24*3600*1000));
-    let html=`<div class="ir"><h4>Your progressed self (age ${age})</h4>`;
-    html+=`<div class="ir-item"><div class="h">☉ Progressed Sun in ${pSun.sign}</div><div class="b">You were born with the Sun in ${nSun.sign}, but your inner identity has been evolving. Your progressed Sun is now in ${pSun.sign} — you're ${PROG_SUN[pSun.sign]}. ${pSun.sign!==nSun.sign?"This is a genuine shift from your birth Sun: a new chapter of who you are at the core.":"Still in your birth sign, deepening the themes you came in with."} The progressed Sun moves about one degree a year, so this colors a long season of life.</div></div>`;
-    html+=`<div class="ir-item"><div class="h">☾ Progressed Moon in ${pMoon.sign}</div><div class="b">Your progressed Moon — the fastest-moving progression, changing sign every ~2.5 years — is in ${pMoon.sign}. Right now, ${PROG_MOON[pMoon.sign]}. This is the emotional weather of your current life chapter, and it will shift again in a couple of years.</div></div>`;
-    html+=`<div class="ir-item"><div class="b" style="font-style:italic;opacity:.85">Progressions are slow and inward — they describe who you're quietly becoming, not events. Read them as the maturing of your inner self over the years.</div></div></div>`;
+    const cusps=cachedAngles?cachedAngles.cusps:null;
+    const moonHouse=cusps?houseOf(prog.Moon,cusps):null;
+
+    // ===== WHO YOU ARE NOW =====
+    let html=`<div class="ir"><h4>Who you are now — age ${age}</h4>`;
+    html+=`<div class="ir-item"><div class="h">☉ Progressed Sun in ${pSun.sign}</div><div class="b">Born with the Sun in ${nSun.sign}, your core identity has matured. Your progressed Sun is now in ${pSun.sign} — you're ${PROG_SUN[pSun.sign]}. ${pSun.sign!==nSun.sign?`This is a real shift from your birth Sun in ${nSun.sign}: you've grown into a noticeably different way of being yourself.`:`Still deepening your birth-sign themes — but the degree keeps advancing, ripening them year by year.`} The progressed Sun moves ~1° per year and changes sign roughly every 30 years, so this is a defining chapter of your whole life.</div></div>`;
+    html+=`<div class="ir-item"><div class="h">☾ Progressed Moon in ${pMoon.sign}${moonHouse?` · ${ordinal(moonHouse)} house`:""}</div><div class="b">Your progressed Moon — the fastest progression, changing sign every ~2.5 years — is in ${pMoon.sign}. Emotionally, ${PROG_MOON[pMoon.sign]}.${moonHouse?` It's moving through your ${ordinal(moonHouse)} house, so ${HOUSE_LONG[moonHouse].area} is emotionally central for this ~2.5-year season.`:""} This is your current inner weather, and it will shift again soon.</div></div>`;
+    // progressed inner planets — only if they've shifted from natal sign (more meaningful)
+    const nMerc=signFromLon(cachedNatal.Mercury),nVen=signFromLon(cachedNatal.Venus),nMars=signFromLon(cachedNatal.Mars);
+    let shifts=[];
+    if(pMerc.sign!==nMerc.sign)shifts.push(`Your progressed Mercury has moved into ${pMerc.sign} — you now ${PROG_INNER.Mercury[pMerc.sign]} compared to how you started.`);
+    if(pVen.sign!==nVen.sign)shifts.push(`Your progressed Venus is in ${pVen.sign} — you've come to ${PROG_INNER.Venus[pVen.sign]}.`);
+    if(pMars.sign!==nMars.sign)shifts.push(`Your progressed Mars is in ${pMars.sign} — you now ${PROG_INNER.Mars[pMars.sign]}.`);
+    if(shifts.length)html+=`<div class="ir-item"><div class="h">How your inner planets have shifted</div><div class="b">${shifts.join(" ")}</div></div>`;
+    // progressed lunation phase note
+    let sunMoonDiff=norm360(prog.Moon-prog.Sun);
+    const phase=sunMoonDiff<45?"a Progressed New Moon phase — the start of a fresh ~29-year life cycle, planting seeds for the future":sunMoonDiff<135?"a waxing phase — building, growing, and putting energy outward":sunMoonDiff<225?"a Progressed Full Moon phase — culmination, fulfillment, and clarity about your direction":"a waning phase — releasing, reflecting, and completing a chapter before the next begins";
+    html+=`<div class="ir-item"><div class="h">Your life-cycle phase</div><div class="b">Your progressed Sun and Moon are currently in ${phase}.</div></div></div>`;
+
+    // ===== WHO YOU'RE BECOMING (30-year increments) =====
+    html+=`<div class="ir"><h4>Who you're becoming</h4><div class="ir-item"><div class="b" style="opacity:.85">Because your progressed Sun changes sign about every 30 years, here's the identity chapter you're growing toward over the coming decades.</div></div>`;
+    [30,60].forEach(yrs=>{
+      const fut=progressedAtAge(profile,yrs);
+      const fSun=signFromLon(fut.Sun),fMoon=signFromLon(fut.Moon);
+      const futAge=age+yrs;
+      const changed=fSun.sign!==pSun.sign;
+      html+=`<div class="ir-item"><div class="h">Around age ${futAge}</div><div class="b">Your progressed Sun will be in <b style="color:var(--star)">${fSun.sign}</b>${changed?` (a shift from ${pSun.sign})`:""} — by then you'll be ${PROG_SUN[fSun.sign]}. ${changed?`This marks a genuine evolution: the ${pSun.sign} themes of your current chapter give way to a new ${fSun.sign} way of being.`:`A continuation and deepening of your current ${pSun.sign} chapter.`} Your progressed Moon will have cycled into ${fMoon.sign}, coloring your emotional life then.</div></div>`;
+    });
+    html+=`<div class="ir-item"><div class="b" style="font-style:italic;opacity:.8">Progressions describe inner evolution, not fixed events — who you're quietly ripening into as the decades turn. Think of it as the slow unfolding of the seed you were born as.</div></div></div>`;
+
     $("prog-body").innerHTML=html;
     $("triwheel-section").classList.remove("hide");
   }catch(e){$("triwheel-section").classList.add("hide");}
@@ -1549,24 +1622,31 @@ function renderLifetimeLuck(){
   }
   found.sort((a,b)=>a.date-b.date);
   if(!found.length){$("lifeluck-body").innerHTML=`<p class="dim" style="font-size:14px">No exact Jupiter peaks found.</p>`;return;}
-  const past=found.filter(f=>f.date<now), future=found.filter(f=>f.date>=now);
-  const rowHtml=(f,isPast)=>{
+  const nowAge=Math.floor((now-birth)/(365.25*86400000));
+  const rowHtml=(f)=>{
+    const isPast=f.date<now;
     const when=f.date.toLocaleDateString(undefined,{month:"short",year:"numeric"});
     const isReturn=f.key==="Jupiter-conj";
     const verb=isPast?(f.aspect==="meets"?"met":"harmonized with"):f.aspect;
     return `<div class="life${isReturn?' life-return':''}${isPast?' life-past':''}"><div class="when">${when}<small style="display:block;color:var(--dim);font-weight:400">age ${f.age}</small></div><div class="what">Jupiter ${verb} your ${f.name==="MC"?"Midheaven":"natal "+f.name}${isReturn?' ✦':''}<small>${f.desc}</small></div></div>`;
   };
-  let html=`<p class="dim" style="font-size:13px;margin-bottom:12px">Your fortunate Jupiter periods across a lifetime — the ones you've lived through, and the ones still ahead. ✦ marks a Jupiter return (a major 12-year new beginning).</p>`;
-  if(past.length){
-    html+=`<div class="life-head">Lived through</div>`+past.map(f=>rowHtml(f,true)).join("");
-  }
-  html+=`<div class="life-now">↓ you are here ↓</div>`;
-  if(future.length){
-    html+=`<div class="life-head" style="color:var(--gold)">Still to come</div>`+future.map(f=>rowHtml(f,false)).join("");
-  }else{
-    html+=`<p class="dim" style="font-size:13px">That's your timeline through age 90.</p>`;
-  }
+  // group by decade of age (0-9, 10-19, ...)
+  const decades={};
+  for(const f of found){const dec=Math.floor(f.age/10)*10;(decades[dec]=decades[dec]||[]).push(f);}
+  let html=`<p class="dim" style="font-size:13px;margin-bottom:14px">Your fortunate Jupiter periods across life, by decade. ✦ marks a Jupiter return — a major 12-year new beginning. Tap a decade to open it.</p>`;
+  Object.keys(decades).map(Number).sort((a,b)=>a-b).forEach(dec=>{
+    const items=decades[dec];
+    const isCurrent=nowAge>=dec&&nowAge<dec+10;
+    const label=`Ages ${dec}–${dec+9}`;
+    const count=items.length;
+    html+=`<div class="decade ${isCurrent?'decade-now':''}"><div class="decade-head" data-dec="${dec}"><span>${label}${isCurrent?' · you are here':''}</span><span class="decade-meta">${count} window${count>1?'s':''} <span class="dchev">▾</span></span></div><div class="decade-body" data-decbody="${dec}" style="${isCurrent?'':'display:none'}">${items.map(rowHtml).join("")}</div></div>`;
+  });
   $("lifeluck-body").innerHTML=html;
+  // wire decade toggles
+  $("lifeluck-body").querySelectorAll(".decade-head").forEach(hd=>hd.addEventListener("click",()=>{
+    const dec=hd.dataset.dec;const body=$("lifeluck-body").querySelector(`[data-decbody="${dec}"]`);
+    const open=body.style.display!=="none";body.style.display=open?"none":"";hd.classList.toggle("open",!open);
+  }));
 }
 const TRANSIT_FLAVOR={
  Jupiter:{trine:"opening doors and widening your sense of what's possible",sextile:"offering an opportunity if you reach for it",conjunction:"expanding and amplifying whatever it touches",square:"tempting you to overpromise or overreach",opposition:"asking you to find the right size between caution and excess"},
