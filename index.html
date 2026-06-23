@@ -216,7 +216,7 @@
     <div class="card">
       <div class="label">Step one · your birth</div>
       <p class="dim" style="font-size:14px;margin:10px 0 4px">Entered once. The sky does the rest.</p>
-      <div class="field"><label>Your name</label><input id="i-name" type="text" placeholder="Lachlan" autocomplete="off"></div>
+      <div class="field"><label>Your name</label><input id="i-name" type="text" placeholder="Your name" autocomplete="off"></div>
       <div class="row">
         <div class="field"><label>Birth date</label>
           <div class="dtrow">
@@ -330,6 +330,99 @@
   .life .when{font-family:"SF Mono",monospace;font-size:13px;color:var(--gold);font-weight:600;flex:0 0 92px;line-height:1.4}
   .life .what{font-size:14px;color:var(--star);line-height:1.5}
   .life .what small{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+  /* ===== Atlas / astrocartography ===== */
+  .acg-intro-head{font-size:18px;color:#fff;font-style:italic;margin-bottom:10px}
+  .acg-p{font-size:14px;color:var(--dim);line-height:1.6;margin:0 0 10px}
+  .acg-p:last-child{margin-bottom:0}
+  .acg-angle-row{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+  .acg-angle-row:last-child{border-bottom:none}
+  .acg-angle-badge{flex:0 0 34px;height:34px;border-radius:8px;border:1.5px solid;display:flex;align-items:center;justify-content:center;font-family:"SF Mono",monospace;font-weight:700;font-size:13px}
+  .acg-angle-t{font-size:14px;color:var(--star);font-weight:600;margin-bottom:2px}
+  .acg-angle-d{font-size:13px;color:var(--dim);line-height:1.5}
+  .acg-leg-row{display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+  .acg-leg-row:last-child{border-bottom:none}
+  .acg-leg-g{width:28px;height:28px;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center;font-size:15px;flex:0 0 28px}
+  .acg-leg-b{flex:1}
+  .acg-leg-n{font-size:14px;color:var(--star);font-weight:600}
+  .acg-leg-k{font-family:"SF Mono",monospace;font-size:11px;color:var(--dim);letter-spacing:.04em}
+  .acg-gen-card{text-align:center}
+  .acg-gen-title{font-size:18px;color:#fff;font-style:italic;margin-bottom:6px}
+  .acg-mapwrap{position:relative;width:100%;background:linear-gradient(180deg,#0a1124,#0c1426);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer}
+  svg#acg-map,svg#acg-fs-map{width:100%;height:auto;display:block;touch-action:none}
+  .acg-coast{fill:#1a2742;stroke:rgba(127,200,196,.18);stroke-width:.35}
+  .acg-grid{stroke:rgba(180,196,255,.07);stroke-width:.3}
+  .acg-equator{stroke:rgba(180,196,255,.14);stroke-width:.4;stroke-dasharray:2 2}
+  .acg-line{fill:none;stroke-width:1;opacity:.92;transition:stroke-width .15s,opacity .15s}
+  .acg-line.dim-line{opacity:.1}
+  .acg-line.hot{stroke-width:2.4;opacity:1}
+  .acg-hit{fill:none;stroke:transparent;stroke-width:7;cursor:pointer}
+  .acg-cross-dot{cursor:pointer}
+  .acg-edge-label{font-family:"SF Mono",monospace;font-size:6px;font-weight:700;pointer-events:none}
+  .acg-tip{position:absolute;background:#0c1322;border:1px solid rgba(232,201,122,.45);border-radius:10px;padding:9px 11px;font-size:12px;max-width:210px;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.55);z-index:30;line-height:1.4}
+  .acg-tip .tip-h{color:var(--gold);font-weight:600;font-family:"SF Mono",monospace;font-size:11px;margin-bottom:3px}
+  .acg-tip .tip-b{color:var(--star)}
+  .acg-tip .tip-r{color:var(--dim);font-size:11px;margin-top:3px}
+  .acg-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .acg-fchip{background:#0c1120;border:1px solid var(--line);color:var(--dim);font:inherit;font-size:12px;padding:6px 11px;border-radius:999px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+  .acg-fchip:hover{border-color:var(--gold)}
+  .acg-fchip.on{background:rgba(232,201,122,.12);border-color:var(--gold);color:var(--star)}
+  .acg-fchip .dotc{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .acg-fchip.all-chip{border-style:dashed;color:var(--teal)}
+  .acg-sum-item{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+  .acg-sum-item:last-child{border-bottom:none}
+  .acg-sum-g{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex:0 0 30px;border:1.5px solid}
+  .acg-sum-b{flex:1}
+  .acg-sum-t{font-size:14px;color:var(--star);font-weight:600;margin-bottom:2px}
+  .acg-sum-d{font-size:13px;color:var(--dim);line-height:1.5}
+  .acg-sum-where{font-size:12px;color:var(--gold);opacity:.85;font-family:"SF Mono",monospace;margin-top:3px}
+  .acg-planet{margin:0;border-bottom:1px solid var(--line)}
+  .acg-planet:last-child{border-bottom:none}
+  .acg-phead{display:flex;align-items:center;gap:10px;padding:13px 2px;cursor:pointer;user-select:none}
+  .acg-phead:hover{opacity:.85}
+  .acg-pglyph{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex:0 0 30px;border:1.5px solid}
+  .acg-pname{flex:1;font-size:16px;color:var(--star)}
+  .acg-pname small{display:block;font-family:"SF Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:2px}
+  .acg-pchev{font-size:12px;color:var(--gold);transition:transform .2s}
+  .acg-planet.open .acg-pchev{transform:rotate(180deg)}
+  .acg-pbody{overflow:hidden;max-height:0;transition:max-height .3s ease}
+  .acg-line-item{display:flex;gap:11px;align-items:flex-start;padding:11px 0 11px 6px;border-top:1px solid var(--line)}
+  .acg-angle-tag{font-family:"SF Mono",monospace;font-size:11px;font-weight:700;flex:0 0 30px;padding-top:1px}
+  .acg-li-body{flex:1}
+  .acg-li-title{font-size:14px;color:var(--star);font-weight:600;margin-bottom:2px}
+  .acg-li-title .kw{font-family:"SF Mono",monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);font-weight:400;margin-left:4px}
+  .acg-li-desc{font-size:13.5px;color:var(--dim);line-height:1.5}
+  .acg-li-through{font-size:12px;color:var(--dim);opacity:.75;margin-top:3px;font-style:italic}
+  .acg-cross-item{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--line)}
+  .acg-cross-item:last-child{border-bottom:none}
+  .acg-cross-marks{flex:0 0 50px;display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px}
+  .acg-cross-pair{font-size:17px;letter-spacing:1px}
+  .acg-cross-place{font-family:"SF Mono",monospace;font-size:10px;color:var(--gold);text-align:center;line-height:1.3}
+  .acg-cross-body{flex:1}
+  .acg-cross-title{font-size:14px;color:var(--star);font-weight:600;margin-bottom:3px}
+  .acg-cross-desc{font-size:13px;color:var(--dim);line-height:1.5}
+  .acg-empty{font-size:13px;color:var(--dim);font-style:italic;padding:4px 0}
+  /* fullscreen overlay */
+  .acg-fs{position:fixed;inset:0;background:#070b16;z-index:300;display:flex;flex-direction:column}
+  .acg-fs.hide{display:none!important}
+  .acg-fs-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .acg-fs-title{font-family:"SF Mono",monospace;font-size:13px;color:var(--star);letter-spacing:.04em}
+  .acg-fs-x{background:#11192c;border:1px solid var(--teal);color:var(--teal);font:inherit;font-size:14px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer}
+  .acg-fs-x:active{background:#1a2540}
+  .acg-fs-stage{flex:1 1 auto;position:relative;overflow:hidden;background:#0a1124;touch-action:none;min-height:0}
+  .acg-fs-stage svg{position:absolute;top:50%;left:50%;width:100%;transform-origin:center center;will-change:transform}
+  .acg-fs-controls{flex:0 0 auto;padding:12px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:#0a0f1c}
+  .acg-fs-zoom{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:10px}
+  .acg-zbtn{width:38px;height:38px;border-radius:10px;background:#11192c;border:1px solid var(--line);color:var(--star);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .acg-zbtn:active{background:#1a2540}
+  .acg-zreset{width:auto;padding:0 12px;font-size:12px;font-family:inherit}
+  .acg-zlabel{font-family:"SF Mono",monospace;font-size:13px;color:var(--gold);min-width:46px;text-align:center}
+  .acg-time-read{text-align:center;font-family:"SF Mono",monospace;font-size:12px;color:var(--teal);margin-bottom:8px;min-height:16px}
+  .acg-step-row{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+  .acg-stepbtn{background:#11192c;border:1px solid var(--line);color:var(--dim);font:inherit;font-size:12px;padding:7px 10px;border-radius:8px;cursor:pointer;min-width:42px}
+  .acg-stepbtn:active{background:#1a2540;color:var(--star)}
+  .acg-play{background:rgba(232,201,122,.14);border-color:var(--gold);color:var(--gold);font-weight:600;min-width:66px}
+  .acg-play.on{background:var(--gold);color:#1a1a2e}
+  .acg-fs-filter{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-height:70px;overflow-y:auto;margin-top:10px}
 </style>
 
   <section id="dash" class="hide">
@@ -344,6 +437,7 @@
       <button class="tab active" data-view="today">Today</button>
       <button class="tab" data-view="month">Lucky days</button>
       <button class="tab" data-view="horo">Month &amp; Year</button>
+      <button class="tab" data-view="atlas">Atlas ✦</button>
     </div>
 
     <div id="view-today">
@@ -430,7 +524,106 @@
       <div class="between"><span class="label">Your year ahead</span></div>
       <div class="card"><div id="year-horo-body"><div class="loading dotpulse">Reading your year</div></div></div>
     </div>
+
+    <!-- ============ ATLAS · ASTROCARTOGRAPHY ============ -->
+    <div id="view-atlas" class="hide">
+      <header style="padding:6px 0 10px">
+        <div class="label" style="text-align:center;color:var(--gold)">✦ Atlas</div>
+        <h1 style="font-size:clamp(28px,8vw,46px)">Astrocartography</h1>
+        <div class="tag">Where on Earth your stars fall</div>
+      </header>
+
+      <!-- WHAT IT IS -->
+      <div class="card">
+        <div class="acg-intro-head">🜨 What is astrocartography?</div>
+        <p class="acg-p">Your birth chart is the sky frozen at one place and one moment. Astrocartography asks a different question: if you'd been born somewhere else, which planets would have been rising, directly overhead, or setting? Those places carry that planet's energy a little louder for <i>you</i> — which is why a city can feel like home before you've unpacked, while somewhere else never quite clicks.</p>
+        <p class="acg-p">Each of your ten planets traces lines across the globe. Live near one and that planet colours daily life there. Where two lines cross, their energies blend into something stronger — your personal power spots.</p>
+      </div>
+
+      <!-- THE FOUR ANGLES -->
+      <div class="between"><span class="label">The four directions a line can take</span></div>
+      <div class="card">
+        <p class="acg-p" style="margin-bottom:14px">Every planet makes four lines, one for each angle of the chart. The angle decides which part of life that planet lights up there.</p>
+        <div class="acg-angle-row"><span class="acg-angle-badge" style="color:var(--gold);border-color:var(--gold)">MC</span><div><div class="acg-angle-t">Midheaven — career &amp; reputation</div><div class="acg-angle-d">A vertical line where the planet was highest in the sky. Shapes your work, public image, and calling.</div></div></div>
+        <div class="acg-angle-row"><span class="acg-angle-badge" style="color:var(--gold);border-color:var(--gold)">IC</span><div><div class="acg-angle-t">Imum Coeli — home &amp; roots</div><div class="acg-angle-d">A vertical line where the planet was directly underfoot. Shapes home, family, and your sense of belonging.</div></div></div>
+        <div class="acg-angle-row"><span class="acg-angle-badge" style="color:var(--teal);border-color:var(--teal)">AC</span><div><div class="acg-angle-t">Ascendant — identity</div><div class="acg-angle-d">A curved line where the planet was rising in the east. Shapes how you show up and who you become there.</div></div></div>
+        <div class="acg-angle-row"><span class="acg-angle-badge" style="color:var(--teal);border-color:var(--teal)">DC</span><div><div class="acg-angle-t">Descendant — relationships</div><div class="acg-angle-d">A curved line where the planet was setting in the west. Shapes partnerships and who you draw toward you.</div></div></div>
+      </div>
+
+      <!-- THE TEN PLANETS -->
+      <div class="between"><span class="label">What each planet brings</span></div>
+      <div class="card"><div id="acg-planet-legend"></div></div>
+
+      <!-- GENERATE -->
+      <div class="card acg-gen-card">
+        <div style="font-size:30px;margin-bottom:6px">🗺️</div>
+        <div class="acg-gen-title" id="acg-gen-title">See your lines on the map</div>
+        <p class="acg-p" id="acg-gen-sub" style="margin-bottom:14px">We'll plot all forty of your lines onto a world map using your exact birth moment, then read the strongest ones for you.</p>
+        <button class="btn" id="acg-generate">Generate my map</button>
+      </div>
+
+      <!-- RESULTS (hidden until generated) -->
+      <div id="acg-results" class="hide">
+        <div class="between"><span class="label">Your lines on the map</span>
+          <button class="linkbtn" id="acg-expand" style="color:var(--teal)">⤢ enlarge &amp; explore</button></div>
+        <div class="card">
+          <div class="acg-mapwrap" id="acg-mapwrap">
+            <svg id="acg-map" viewBox="0 0 360 180" preserveAspectRatio="xMidYMid meet"></svg>
+            <div id="acg-tip" class="acg-tip hide"></div>
+          </div>
+          <div class="acg-toolbar" id="acg-filter"></div>
+          <p class="dim" id="acg-mapnote" style="font-size:12px;margin-top:10px;line-height:1.5">Tap a planet chip to isolate its lines. Tap “enlarge” to zoom, pan, and watch the lines move through time.</p>
+        </div>
+
+        <div class="between"><span class="label">Your strongest lines</span></div>
+        <div class="card">
+          <p class="dim" style="font-size:13px;margin-bottom:10px">The places where your chart speaks loudest. Expand any planet below for its full reading.</p>
+          <div id="acg-summary"></div>
+        </div>
+
+        <div class="between"><span class="label">Every planet, line by line</span></div>
+        <div class="card"><div id="acg-detail"></div></div>
+
+        <div class="between"><span class="label">Power spots · where two lines meet</span></div>
+        <div class="card">
+          <p class="dim" style="font-size:13px;margin-bottom:10px">Where two of your lines cross, both energies combine. These are your most charged places on Earth.</p>
+          <div id="acg-cross"></div>
+        </div>
+      </div>
+    </div>
   </section>
+
+  <!-- ATLAS FULLSCREEN (opt-in, starts hidden) -->
+  <div id="acg-fs" class="acg-fs hide" aria-hidden="true">
+    <div class="acg-fs-bar">
+      <div class="acg-fs-title">✦ <span id="acg-fs-name">Your</span> map</div>
+      <button class="acg-fs-x" id="acg-fs-close" type="button">✕ Close</button>
+    </div>
+    <div class="acg-fs-stage" id="acg-fs-stage">
+      <svg id="acg-fs-map" viewBox="0 0 360 180" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="acg-fs-tip" class="acg-tip hide"></div>
+    </div>
+    <div class="acg-fs-controls">
+      <div class="acg-fs-zoom">
+        <button class="acg-zbtn" id="acg-zoom-out" type="button">−</button>
+        <span class="acg-zlabel" id="acg-zlabel">1.0×</span>
+        <button class="acg-zbtn" id="acg-zoom-in" type="button">+</button>
+        <button class="acg-zbtn acg-zreset" id="acg-zoom-reset" type="button">reset</button>
+      </div>
+      <div class="acg-time-read" id="acg-time-read"></div>
+      <div class="acg-step-row">
+        <button class="acg-stepbtn" data-step="-3600" type="button">−1h</button>
+        <button class="acg-stepbtn" data-step="-60" type="button">−1m</button>
+        <button class="acg-stepbtn" data-step="-1" type="button">−1s</button>
+        <button class="acg-stepbtn acg-play" id="acg-play" type="button">▶ play</button>
+        <button class="acg-stepbtn" data-step="1" type="button">+1s</button>
+        <button class="acg-stepbtn" data-step="60" type="button">+1m</button>
+        <button class="acg-stepbtn" data-step="3600" type="button">+1h</button>
+      </div>
+      <button class="linkbtn" id="acg-time-reset" type="button" style="color:var(--gold);font-size:12px;margin-top:8px">↺ back to birth moment</button>
+      <div class="acg-fs-filter" id="acg-fs-filter"></div>
+    </div>
+  </div>
 
   <!-- profile menu overlay -->
   <div id="pmenu" class="pmenu-overlay hide">
@@ -632,7 +825,7 @@ function drawWheelInto(svgId,natal,angles){
 function posLabel(lon){const s=signFromLon(lon);return `${s.degInSign.toFixed(0)}° ${s.sign}`;}
 function planetGlyph(k){return PLANETS.find(p=>p.key===k).glyph;}
 
-let profile=null,cachedNatal=null,cachedTransit=null,cachedAspects=null,cachedAngles=null,cachedEvents=null,luckyWindowsForPrompt=[],monthRendered=false;
+let profile=null,cachedNatal=null,cachedTransit=null,cachedAspects=null,cachedAngles=null,cachedEvents=null,luckyWindowsForPrompt=[],monthRendered=false,_cacheProfileId=null;
 function renderEvents(ev){
   const items=[];
   if(ev.ingress)items.push({icon:"✦",cls:"ev-major",text:ev.ingress.text});
@@ -751,6 +944,287 @@ function pickPlace(i){const it=acItems[i];if(!it)return;const dv=getDateValue();
 /* ============ SECONDARY PROGRESSIONS + TRI-WHEEL ============
    "A day for a year": the progressed chart for your current age is the real sky
    (age-in-years) days after birth. Shows who you're becoming. */
+
+/* ============================================================
+   ATLAS · ASTROCARTOGRAPHY  (menu tab; explanation first)
+   renderAtlas()      -> static explanation + planet legend only
+   generateAtlasMap() -> computes lines, draws map + readings on demand
+   Fullscreen is strictly opt-in via openAcgFullscreen().
+   ============================================================ */
+const ACG_PLANETS=[
+  {key:"Sun",glyph:"☉",col:"#e0a23a",kw:["Vitality","Self-Awareness","Confidence"],bring:"vitality, confidence, and a clear sense of purpose"},
+  {key:"Moon",glyph:"☽",col:"#6f8fd6",kw:["Emotions","Connections","Comfort"],bring:"emotional depth, comfort, and a feeling of home"},
+  {key:"Mercury",glyph:"☿",col:"#b06fd6",kw:["Communication","Ideas","Intellect"],bring:"sharp thinking, conversation, and learning"},
+  {key:"Venus",glyph:"♀",col:"#cfc25a",kw:["Beauty","Attraction","Pleasure"],bring:"love, beauty, art, and ease in relationships"},
+  {key:"Mars",glyph:"♂",col:"#d9555f",kw:["Motivation","Action","Passion"],bring:"drive, courage, and physical energy"},
+  {key:"Jupiter",glyph:"♃",col:"#e08a5a",kw:["Abundance","Expansion","Luck"],bring:"luck, growth, optimism, and opportunity"},
+  {key:"Saturn",glyph:"♄",col:"#d8a44a",kw:["Responsibility","Stability","Maturity"],bring:"discipline, structure, and hard-won maturity"},
+  {key:"Uranus",glyph:"♅",col:"#5ab8c4",kw:["Originality","Spontaneity","Freedom"],bring:"change, freedom, and unexpected breakthroughs"},
+  {key:"Neptune",glyph:"♆",col:"#7a6fd6",kw:["Imagination","Spirituality","Creativity"],bring:"imagination, spirituality, and dreamlike inspiration"},
+  {key:"Pluto",glyph:"♇",col:"#d65f9e",kw:["Transformation","Depth","Power"],bring:"deep transformation, intensity, and personal power"},
+];
+const ACG_D2R=Math.PI/180, ACG_R2D=180/Math.PI;
+function radecOf(body,date){
+  const A=window.Astronomy;const gv=A.GeoVector(A.Body[body],date,true);
+  const r=Math.sqrt(gv.x*gv.x+gv.y*gv.y+gv.z*gv.z);
+  return {ra:norm360(Math.atan2(gv.y,gv.x)*ACG_R2D),dec:Math.asin(gv.z/r)*ACG_R2D};
+}
+const _to180=lon=>{lon=norm360(lon);return lon>180?lon-360:lon;};
+function acgLinesFor(body,date,gst){
+  const {ra,dec}=radecOf(body,date);
+  const mcLon=_to180(ra-gst), icLon=_to180(ra-gst+180);
+  const acPts=[],dcPts=[];
+  for(let lat=-85;lat<=85;lat+=1){
+    const cosH=-Math.tan(lat*ACG_D2R)*Math.tan(dec*ACG_D2R);
+    if(cosH<-1||cosH>1){acPts.push(null);dcPts.push(null);continue;}
+    const H=Math.acos(cosH)*ACG_R2D;
+    acPts.push({lat,lon:_to180(ra-H-gst)});dcPts.push({lat,lon:_to180(ra+H-gst)});
+  }
+  return {ra,dec,mcLon,icLon,acPts,dcPts};
+}
+const acgX=lon=>lon+180, acgY=lat=>90-lat;
+function acgCurvePath(pts){
+  const segs=[];let cur=[];
+  for(let i=0;i<pts.length;i++){const p=pts[i];
+    if(!p){if(cur.length>1)segs.push(cur);cur=[];continue;}
+    if(cur.length){const prev=cur[cur.length-1];if(Math.abs(p.lon-prev.lon)>180){if(cur.length>1)segs.push(cur);cur=[];}}
+    cur.push(p);}
+  if(cur.length>1)segs.push(cur);
+  return segs.map(seg=>"M"+seg.map(p=>acgX(p.lon).toFixed(1)+" "+acgY(p.lat).toFixed(1)).join(" L")).join(" ");
+}
+const ACG_ANGLE_NAME={AC:"Ascendant",DC:"Descendant",MC:"Midheaven",IC:"Imum Coeli"};
+const ACG_ANGLE_THEME={AC:"identity & self-expression",DC:"love & relationships",MC:"career & public life",IC:"home & family"};
+const ACG_TEXT={
+  Sun:{AC:"You feel energized and full of life, radiating confidence. Leadership comes naturally and you focus on your own goals.",DC:"You attract confident, strong-willed people. Partnerships enhance your sense of self and teach you who you are.",MC:"Your career shines. Ambition grows, recognition follows, and leadership roles come easily.",IC:"Your focus turns inward. Home, roots, and heritage become central, and you find comfort in where you come from."},
+  Moon:{AC:"Your feelings run strong and close to the surface. You connect deeply with yourself and others, and nurture those around you.",DC:"You form deep emotional bonds. You find comfort in close relationships, and shared feelings deepen every connection.",MC:"Your work resonates with emotion. Caring professions fulfill you, and intuition guides your path.",IC:"Deep emotions stir at home. Family ties strengthen and you feel most at ease in familiar surroundings."},
+  Mercury:{AC:"Your mind is lively and curious. You love sharing ideas and learning, and networking comes easily.",DC:"Communication is the heart of your relationships. You meet people who spark your mind and conversation flows.",MC:"Communication lifts your career. Writing, teaching, and media open up, and your ideas catch attention.",IC:"Communication thrives at home. Lively family discussions, study, and working from home all suit you here."},
+  Venus:{AC:"You exude charm and attract love. Social life flourishes and beauty, art, and romance come easily.",DC:"Love and attraction flourish. You draw caring, loving partners, and relationships bring joy and peace.",MC:"Beauty and charm shape your work. Careers in art, design, or diplomacy bloom, and your reputation opens doors.",IC:"You create a beautiful, cozy home. Love surrounds family life and you take pleasure in making your space inviting."},
+  Mars:{AC:"You're energetic and bold. You take action, pursue desires, and assert yourself with confidence.",DC:"Relationships run intense. Powerful chemistry and strong desire — just stay mindful of conflict and power struggles.",MC:"Ambition ignites. You take bold steps, compete fiercely, and aim to be the best.",IC:"You pour energy into home and family — renovations, projects, leading the household. You stand strong within."},
+  Jupiter:{AC:"Opportunities abound and luck favors you. Optimism grows and you embrace new experiences, learning, and adventure.",DC:"You meet generous, uplifting people. Relationships expand your horizons and you grow wiser together.",MC:"Opportunities for growth abound. You rise through education, travel, or philosophy, and optimism shapes your image.",IC:"Home life is abundant and happy. Family relationships are warm and you feel a strong sense of belonging."},
+  Saturn:{AC:"You mature and embrace discipline. Hard work pays off as patience and responsibility guide your path.",DC:"Relationships are serious and committed. You meet mature, responsible partners, and loyalty strengthens your bonds.",MC:"Hard work leads to achievement. Discipline earns respect and you build a solid, lasting reputation.",IC:"You work hard to build a secure home. Responsibilities grow but bring stability and a deep sense of belonging."},
+  Uranus:{AC:"You crave freedom and embrace change. Original ideas spark, and the unexpected leads to exciting shifts.",DC:"You meet unusual, exciting people. Relationships bring change and spontaneity — unconventional but liberating.",MC:"Innovation propels your career. Unconventional paths set you apart and sudden changes bring advancement.",IC:"Home life is dynamic, maybe unstable. You may move often or seek unconventional living arrangements."},
+  Neptune:{AC:"Imagination blooms and dreams feel real. You sense a deep spiritual connection, guided by creativity and intuition.",DC:"Connections feel dreamy and spiritual, even mystical. Keep an eye on boundaries to avoid confusion.",MC:"You seek a dreamy or spiritual path. Creativity and compassion guide your work — just watch for illusions.",IC:"Home feels ethereal, a peaceful retreat. Lean toward the dreamy, but keep domestic life practical too."},
+  Pluto:{AC:"Deep transformation happens here. You face truths, release old patterns, and step into powerful new beginnings.",DC:"Relationships transform you. Intense connections drive growth — power dynamics may arise, but so can healing.",MC:"Transformation shapes your career. You wield influence and face big changes; power marks your public presence.",IC:"Deep change occurs at home. Family dynamics intensify, leading to real evolution and understanding of your roots."},
+};
+
+/* state */
+let acgLines=null,acgGst=0,acgBirthMs=0,acgOffsetSec=0,acgFilter="all",_acgCrossCache=null,acgGenerated=false,_acgBuiltForId=null;
+function gmstFromMs(ms){return gmstDeg(ms/86400000+2440587.5);}
+function computeAcgLines(){
+  const date=new Date(acgBirthMs+acgOffsetSec*1000);
+  acgGst=gmstFromMs(date.getTime());
+  const lines={};
+  for(const p of ACG_PLANETS){try{lines[p.key]=acgLinesFor(p.key,date,acgGst);}catch(e){}}
+  acgLines=lines;_acgCrossCache=null;
+}
+
+/* crossings */
+function acgLineSamples(key,angle){const L=acgLines[key];if(!L)return[];
+  if(angle==="MC")return[{lon:L.mcLon,lat:88},{lon:L.mcLon,lat:-88}];
+  if(angle==="IC")return[{lon:L.icLon,lat:88},{lon:L.icLon,lat:-88}];
+  if(angle==="AC")return L.acPts.filter(Boolean);
+  if(angle==="DC")return L.dcPts.filter(Boolean);return[];}
+function segIntersect(p1,p2,p3,p4){
+  if(Math.abs(p1.lon-p2.lon)>180||Math.abs(p3.lon-p4.lon)>180)return null;
+  const x1=acgX(p1.lon),y1=acgY(p1.lat),x2=acgX(p2.lon),y2=acgY(p2.lat),x3=acgX(p3.lon),y3=acgY(p3.lat),x4=acgX(p4.lon),y4=acgY(p4.lat);
+  const d=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);if(Math.abs(d)<1e-9)return null;
+  const t=((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/d,u=((x1-x3)*(y1-y2)-(y1-y3)*(x1-x2))/d;
+  if(t<0||t>1||u<0||u>1)return null;
+  return {x:x1+t*(x2-x1),y:y1+t*(y2-y1),lon:(x1+t*(x2-x1))-180,lat:90-(y1+t*(y2-y1))};}
+function lineIntersections(A,B){const out=[];for(let i=0;i<A.length-1;i++)for(let j=0;j<B.length-1;j++){const h=segIntersect(A[i],A[i+1],B[j],B[j+1]);if(h)out.push(h);}return out;}
+const ACG_CROSS_TEXT={"Sun|Jupiter":"Confidence meets luck. Your charm opens doors and goals feel reachable — a place where great things happen.","Sun|Pluto":"Personal transformation. You discover inner strength and grow by exploring the depths of who you are.","Sun|Moon":"Identity and feeling come together. You feel balanced, whole, and in sync inside and out.","Sun|Venus":"Charm and beauty surround you. You attract love and express yourself through art; relationships feel joyful.","Sun|Mercury":"Your mind is wide awake. You think fast, connect easily, and conversations come alive.","Sun|Mars":"Energy and drive run high. You pursue goals with courage and ignite your passion.","Sun|Saturn":"Focus and responsibility. Ambitions turn serious and you build your reputation with patience.","Sun|Uranus":"Freedom and fresh ideas. Change and originality spark innovation, and you reinvent yourself.","Sun|Neptune":"Creativity and imagination shine. You feel inspired and spiritually connected; dreams enrich your reality.","Moon|Jupiter":"Emotions feel expansive and warm. You find joy in sharing, and your good vibes lift everyone around you.","Moon|Pluto":"Emotions run deep. You confront powerful feelings, embrace change, and find emotional renewal.","Moon|Uranus":"Feelings are unpredictable and alive. You embrace change and surprises keep your emotional life fresh.","Moon|Saturn":"Emotions steady and mature. You build lasting security and learn to hold your own feelings with care.","Moon|Neptune":"Feelings turn dreamy and psychic. Deep compassion flows — just guard against losing yourself in others.","Moon|Venus":"Warmth and affection abound. Home and love intertwine; you nurture and are nurtured in return.","Mercury|Jupiter":"Ideas expand and optimism grows. Learning and sharing flourish, leading to real opportunity.","Mercury|Uranus":"Your mind is sharp and inventive. New insights spark exciting conversation; you think outside the box.","Mercury|Neptune":"Thoughts turn dreamy and imaginative. Intuition guides your words — a place for poetry and the ethereal.","Mercury|Pluto":"Conversations go deep and transformative. You seek truth and your words carry real power.","Mercury|Venus":"Words turn sweet and charming. You express affection and creativity, and connections feel loving.","Mercury|Saturn":"Thoughts are focused and disciplined. A place for serious study and building solid knowledge.","Mercury|Mars":"Words are sharp and direct. Your mind is quick, debates are lively, and your persuasion shines.","Venus|Pluto":"Love turns intense and transformative. Relationships go deep and passion drives profound growth.","Venus|Neptune":"Love is dreamy and idealistic. Romance feels soulful and you connect spiritually with others.","Venus|Jupiter":"Love and luck amplify each other. Relationships flourish and joy, beauty, and abundance flow freely.","Venus|Mars":"Attraction runs hot. Passion and chemistry ignite; romance feels alive and magnetic.","Venus|Saturn":"Love turns serious and committed. Bonds are built to last, grounded in loyalty and devotion.","Venus|Uranus":"Attraction is electric and unexpected. Exciting, unconventional connections spark suddenly.","Mars|Jupiter":"Energy and enthusiasm soar. You tackle challenges with confidence; an adventurous spirit drives success.","Mars|Pluto":"Power and passion blend intensely. You embrace challenges and emerge stronger, transformed.","Mars|Saturn":"Energy meets discipline. Persistence turns effort into solid, lasting achievement.","Mars|Uranus":"Action turns bold and unpredictable. You seek adventure and let spontaneity lead the way.","Mars|Neptune":"Energy meets imagination. Intuition guides your actions and dreams motivate you.","Jupiter|Pluto":"Opportunity meets transformation. You pursue ambitious goals with intensity and vision.","Jupiter|Saturn":"Growth meets structure. You expand wisely and build something both ambitious and lasting.","Jupiter|Uranus":"Lucky breakthroughs. Sudden opportunities and exciting change open new horizons.","Jupiter|Neptune":"Dreams and optimism blend. Inspiration and spiritual or creative growth flow; aim high but stay grounded.","Saturn|Uranus":"Tradition meets innovation. You balance structure with change, breaking free while staying grounded.","Saturn|Neptune":"Dreams meet practicality. You ground your visions and patiently turn them into something real.","Saturn|Pluto":"Responsibility meets deep change. Resilience turns limits into strength and empowerment.","Uranus|Neptune":"Inspiration and innovation combine. Unique ideas flow and your imagination breaks new ground.","Uranus|Pluto":"Change runs intense and powerful. You break from the past, and your revolutionary spirit liberates you.","Neptune|Pluto":"Mysticism meets transformation. You explore the subconscious and evolve through powerful insight."};
+function crossText(a,b){return ACG_CROSS_TEXT[a+"|"+b]||ACG_CROSS_TEXT[b+"|"+a]||`${a} and ${b} energies blend here, heightening both.`;}
+const ACG_REGIONS=[{name:"North America",lon:[-168,-52],lat:[15,75]},{name:"South America",lon:[-82,-34],lat:[-56,12]},{name:"Europe",lon:[-10,40],lat:[36,71]},{name:"Africa",lon:[-18,52],lat:[-35,37]},{name:"the Middle East",lon:[34,63],lat:[12,42]},{name:"Russia & North Asia",lon:[40,180],lat:[50,78]},{name:"South & East Asia",lon:[60,150],lat:[5,50]},{name:"Southeast Asia",lon:[95,141],lat:[-10,28]},{name:"Australia",lon:[113,154],lat:[-39,-11]},{name:"the Pacific",lon:[150,180],lat:[-40,40]},{name:"the Atlantic",lon:[-50,-10],lat:[-40,40]},{name:"the Indian Ocean",lon:[50,95],lat:[-40,5]}];
+function regionFor(lon,lat){for(const r of ACG_REGIONS){if(lon>=r.lon[0]&&lon<=r.lon[1]&&lat>=r.lat[0]&&lat<=r.lat[1])return r.name;}return lat>66?"the Arctic":lat<-60?"Antarctica":"open ocean";}
+const _isOcean=r=>/Ocean|Pacific|Atlantic|Arctic|Antarctica|open ocean/.test(r);
+function acgAllCrossings(){
+  if(_acgCrossCache)return _acgCrossCache;
+  const keys=ACG_PLANETS.map(p=>p.key).filter(k=>acgLines[k]);const ORDER=["MC","IC","AC","DC"];const out=[];let idc=0;
+  for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++){const a=keys[i],b=keys[j];
+    for(const angA of ORDER)for(const angB of ORDER){for(const h of lineIntersections(acgLineSamples(a,angA),acgLineSamples(b,angB))){
+      if(h.lat>84||h.lat<-84)continue;
+      out.push({id:"x"+(idc++),a,b,angA,angB,x:h.x,y:h.y,lon:h.lon,lat:h.lat,col:ACG_PLANETS.find(p=>p.key===a).col,region:regionFor(h.lon,h.lat)});}}}
+  _acgCrossCache=out;return out;
+}
+
+/* world map path */
+const ACG_WORLD_PATH="M12.0 25.0 L15.0 30.0 L25.0 32.0 L42.0 31.0 L50.0 35.0 L57.0 42.0 L56.0 50.0 L63.0 57.0 L70.0 67.0 L75.0 68.0 L83.0 74.0 L86.0 72.0 L90.0 69.0 L92.0 74.0 L97.0 81.0 L100.0 81.0 L103.0 82.0 L99.0 75.0 L95.0 69.0 L90.0 61.0 L86.0 61.0 L83.0 62.0 L83.0 64.0 L81.0 68.0 L83.0 70.0 L89.0 71.0 L93.0 69.0 L90.0 60.0 L91.0 60.0 L98.0 61.0 L100.0 65.0 L99.0 59.0 L104.0 55.0 L110.0 48.0 L113.0 45.0 L120.0 44.0 L125.0 38.0 L116.0 30.0 L102.0 27.0 L85.0 17.0 L70.0 12.0 L55.0 20.0 L25.0 18.0 L12.0 22.0 L12.0 25.0 Z M99.0 82.0 L103.0 82.0 L103.0 88.0 L100.0 94.0 L110.0 108.0 L109.0 120.0 L107.0 135.0 L105.0 142.0 L112.0 145.0 L116.0 142.0 L122.0 130.0 L132.0 115.0 L140.0 112.0 L145.0 98.0 L130.0 90.0 L128.0 86.0 L120.0 82.0 L113.0 79.0 L108.0 79.0 L102.0 82.0 L99.0 82.0 Z M170.0 54.0 L171.0 47.0 L178.0 47.0 L181.0 39.0 L175.0 32.0 L185.0 28.0 L192.0 25.0 L204.0 19.0 L208.0 19.0 L220.0 22.0 L235.0 22.0 L248.0 22.0 L258.0 17.0 L280.0 12.0 L320.0 17.0 L340.0 20.0 L360.0 24.0 L360.0 30.0 L340.0 30.0 L325.0 30.0 L315.0 35.0 L320.0 38.0 L315.0 42.0 L310.0 47.0 L307.0 50.0 L302.0 50.0 L302.0 60.0 L298.0 66.0 L290.0 69.0 L288.0 74.0 L286.0 80.0 L284.0 82.0 L280.0 82.0 L280.0 76.0 L278.0 74.0 L275.0 74.0 L272.0 69.0 L270.0 68.0 L268.0 68.0 L262.0 73.0 L258.0 82.0 L257.0 82.0 L260.0 75.0 L260.0 65.0 L248.0 66.0 L242.0 65.0 L237.0 65.0 L236.0 64.0 L230.0 60.0 L228.0 60.0 L228.0 66.0 L223.0 77.0 L231.0 78.0 L224.0 88.0 L220.0 94.0 L220.0 106.0 L215.0 110.0 L213.0 116.0 L207.0 124.0 L200.0 125.0 L198.0 124.0 L192.0 107.0 L189.0 86.0 L188.0 86.0 L183.0 84.0 L172.0 85.0 L164.0 76.0 L163.0 69.0 L170.0 62.0 L170.0 54.0 Z M293.0 112.0 L294.0 124.0 L303.0 124.0 L311.0 121.0 L318.0 125.0 L321.0 128.0 L328.0 128.0 L330.0 127.0 L333.0 121.0 L333.0 115.0 L326.0 109.0 L322.0 101.0 L316.0 102.0 L310.0 101.0 L304.0 106.0 L301.0 109.0 L293.0 112.0 Z M135.0 30.0 L150.0 30.0 L160.0 20.0 L160.0 8.0 L140.0 6.0 L122.0 8.0 L125.0 20.0 L135.0 30.0 Z M174.0 40.0 L177.0 40.0 L181.0 38.0 L179.0 32.0 L174.0 32.0 L172.0 35.0 L174.0 40.0 Z M353.0 125.0 L358.0 128.0 L354.0 132.0 L347.0 136.0 L347.0 134.0 L351.0 131.0 L353.0 125.0 Z M224.0 106.0 L230.0 105.0 L230.0 115.0 L225.0 115.0 L224.0 106.0 Z M275.0 85.0 L285.0 92.0 L295.0 93.0 L300.0 95.0 L313.0 92.0 L321.0 93.0 L321.0 98.0 L300.0 99.0 L290.0 98.0 L280.0 88.0 L275.0 85.0 Z M300.0 72.0 L304.0 72.0 L306.0 80.0 L302.0 84.0 L300.0 78.0 L300.0 72.0 Z";
+const ACG_ORDER=["MC","IC","AC","DC"];
+function acgAngleStyle(a){return a==="MC"?{dash:"",w:1.1}:a==="IC"?{dash:"2 1.5",w:1}:a==="AC"?{dash:"",w:1}:{dash:"3 2",w:1};}
+function acgBuildSvg(showCrossDots){
+  let s="";
+  for(let lon=-150;lon<=150;lon+=30){const x=acgX(lon);s+=`<line class="acg-grid" x1="${x}" y1="0" x2="${x}" y2="180"/>`;}
+  for(let lat=-60;lat<=60;lat+=30){const y=acgY(lat);s+=`<line class="acg-grid" x1="0" y1="${y}" x2="360" y2="${y}"/>`;}
+  s+=`<line class="acg-equator" x1="0" y1="90" x2="360" y2="90"/>`;
+  s+=`<path class="acg-coast" d="${ACG_WORLD_PATH}"/>`;
+  const keys=ACG_PLANETS.map(p=>p.key).filter(k=>acgLines[k]);
+  const drawLine=(key,angle)=>{const L=acgLines[key];const col=ACG_PLANETS.find(p=>p.key===key).col;const st=acgAngleStyle(angle);
+    const dimmed=(acgFilter!=="all"&&acgFilter!==key);let d="";
+    if(angle==="MC")d=`M${acgX(L.mcLon)} 4 L${acgX(L.mcLon)} 176`;
+    else if(angle==="IC")d=`M${acgX(L.icLon)} 4 L${acgX(L.icLon)} 176`;
+    else if(angle==="AC")d=acgCurvePath(L.acPts);else if(angle==="DC")d=acgCurvePath(L.dcPts);
+    if(!d)return"";
+    let out=`<path class="acg-line${dimmed?" dim-line":""}" data-key="${key}" data-angle="${angle}" stroke="${col}" stroke-width="${st.w}"${st.dash?` stroke-dasharray="${st.dash}"`:""} d="${d}"/>`;
+    if(!dimmed)out+=`<path class="acg-hit" data-key="${key}" data-angle="${angle}" d="${d}"/>`;return out;};
+  for(const key of keys)for(const ang of ACG_ORDER){if(acgFilter!=="all"&&acgFilter!==key)s+=drawLine(key,ang);}
+  for(const key of keys)for(const ang of ACG_ORDER){if(acgFilter==="all"||acgFilter===key)s+=drawLine(key,ang);}
+  if(showCrossDots)for(const c of acgCrossingsForMap())s+=`<circle class="acg-cross-dot" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="2.2" fill="#fff" stroke="${c.col}" stroke-width="1" data-cross="${c.id}"/>`;
+  for(const key of keys){if(acgFilter===key){const L=acgLines[key],g=ACG_PLANETS.find(p=>p.key===key).glyph,col=ACG_PLANETS.find(p=>p.key===key).col;
+    s+=`<text class="acg-edge-label" x="${acgX(L.mcLon)}" y="3" text-anchor="middle" fill="${col}">${g}</text><text class="acg-edge-label" x="${acgX(L.icLon)}" y="3" text-anchor="middle" fill="${col}">${g}</text>`;}}
+  return s;
+}
+function acgCrossingsForMap(){const all=acgAllCrossings();let list;
+  if(acgFilter!=="all")list=all.filter(c=>c.a===acgFilter||c.b===acgFilter);
+  else list=all.filter(c=>/Jupiter|Venus|Sun/.test(c.a)&&/Jupiter|Venus|Sun|Moon/.test(c.b));
+  const seen=[],out=[];for(const c of list){if(seen.some(p=>Math.abs(p.x-c.x)<3&&Math.abs(p.y-c.y)<3))continue;seen.push(c);out.push(c);}return out.slice(0,40);}
+function acgTipHtml(key,angle){const p=ACG_PLANETS.find(x=>x.key===key);return `<div class="tip-h">${p.glyph} ${key} · ${angle} line</div><div class="tip-b">${ACG_TEXT[key][angle]}</div><div class="tip-r">${ACG_ANGLE_NAME[angle]} — ${ACG_ANGLE_THEME[angle]}</div>`;}
+function acgShowTip(tipEl,wrapEl,targetEl,key,angle,crossId){
+  if(crossId){const c=acgAllCrossings().find(x=>x.id===crossId);if(!c)return;const pa=ACG_PLANETS.find(x=>x.key===c.a),pb=ACG_PLANETS.find(x=>x.key===c.b);
+    tipEl.innerHTML=`<div class="tip-h">${pa.glyph}${c.angA} ✕ ${pb.glyph}${c.angB}</div><div class="tip-b">${crossText(c.a,c.b)}</div><div class="tip-r">near ${c.region}</div>`;}
+  else tipEl.innerHTML=acgTipHtml(key,angle);
+  tipEl.classList.remove("hide");
+  const box=wrapEl.getBoundingClientRect(),tb=targetEl.getBoundingClientRect();
+  tipEl.style.left="0";tipEl.style.top="0";const tw=tipEl.offsetWidth,th=tipEl.offsetHeight;
+  let left=tb.left-box.left+tb.width/2-tw/2,top=tb.top-box.top-th-8;
+  left=Math.max(6,Math.min(left,box.width-tw-6));if(top<6)top=tb.bottom-box.top+8;
+  tipEl.style.left=left+"px";tipEl.style.top=top+"px";
+  clearTimeout(acgShowTip._t);acgShowTip._t=setTimeout(()=>tipEl.classList.add("hide"),4500);
+}
+function renderAcgMap(){
+  const svg=$("acg-map");if(!svg||!acgLines)return;
+  svg.innerHTML=acgBuildSvg(true);
+  const tip=$("acg-tip"),wrap=$("acg-mapwrap");
+  svg.querySelectorAll(".acg-hit").forEach(el=>el.addEventListener("click",e=>{e.stopPropagation();
+    svg.querySelectorAll(".acg-line").forEach(l=>l.classList.remove("hot"));
+    svg.querySelectorAll(`.acg-line[data-key="${el.dataset.key}"][data-angle="${el.dataset.angle}"]`).forEach(l=>l.classList.add("hot"));
+    acgShowTip(tip,wrap,el,el.dataset.key,el.dataset.angle,null);}));
+  svg.querySelectorAll(".acg-cross-dot").forEach(el=>el.addEventListener("click",e=>{e.stopPropagation();acgShowTip(tip,wrap,el,null,null,el.dataset.cross);}));
+}
+function renderAcgFilterInto(id,onPick){
+  const bar=$(id);if(!bar)return;const keys=ACG_PLANETS.filter(p=>acgLines[p.key]);
+  let h=`<button class="acg-fchip all-chip ${acgFilter==="all"?"on":""}" data-f="all">✦ all</button>`;
+  h+=keys.map(p=>`<button class="acg-fchip ${acgFilter===p.key?"on":""}" data-f="${p.key}"><i class="dotc" style="background:${p.col}"></i>${p.glyph}</button>`).join("");
+  bar.innerHTML=h;
+  bar.querySelectorAll(".acg-fchip").forEach(el=>el.addEventListener("click",()=>{acgFilter=el.dataset.f;onPick();}));
+}
+function acgRegionsForLine(key,angle){
+  const samples=acgLineSamples(key,angle);const hit=[];
+  if(angle==="MC"||angle==="IC"){const lon=angle==="MC"?acgLines[key].mcLon:acgLines[key].icLon;
+    for(let lat=70;lat>=-55;lat-=5){const r=regionFor(lon,lat);if(!_isOcean(r)&&!hit.includes(r))hit.push(r);}
+  }else for(const s of samples){const r=regionFor(s.lon,s.lat);if(!_isOcean(r)&&!hit.includes(r))hit.push(r);}
+  return hit;
+}
+function renderAcgSummary(){
+  const box=$("acg-summary");if(!box)return;const picks=[];
+  const want=[["Jupiter","MC"],["Jupiter","AC"],["Venus","DC"],["Sun","MC"],["Venus","AC"],["Sun","AC"],["Jupiter","DC"]];
+  for(const [k,a] of want){if(acgLines[k]){const regions=acgRegionsForLine(k,a);if(regions.length)picks.push({k,a,regions});}if(picks.length>=5)break;}
+  if(!picks.length){box.innerHTML=`<div class="acg-empty">Add your birth time to see your strongest lines.</div>`;return;}
+  box.innerHTML=picks.map(({k,a,regions})=>{const p=ACG_PLANETS.find(x=>x.key===k);
+    return `<div class="acg-sum-item"><span class="acg-sum-g" style="border-color:${p.col};color:${p.col}">${p.glyph}</span>
+      <div class="acg-sum-b"><div class="acg-sum-t">${k} on the ${ACG_ANGLE_NAME[a]} — ${ACG_ANGLE_THEME[a].split(" & ")[0]}</div>
+      <div class="acg-sum-d">${ACG_TEXT[k][a]}</div><div class="acg-sum-where">↳ ${regions.slice(0,3).join(" · ")}</div></div></div>`;}).join("");
+}
+function renderAcgDetail(){
+  const box=$("acg-detail");if(!box)return;const keys=ACG_PLANETS.filter(p=>acgLines[p.key]);
+  box.innerHTML=keys.map(p=>{const lines=ACG_ORDER.map(ang=>{const regions=acgRegionsForLine(p.key,ang);const through=regions.length?regions.slice(0,4).join(", "):"mostly ocean";const tagcol=(ang==="MC"||ang==="IC")?"var(--gold)":"var(--teal)";
+    return `<div class="acg-line-item"><span class="acg-angle-tag" style="color:${tagcol}">${ang}</span><div class="acg-li-body"><div class="acg-li-title">${ACG_ANGLE_NAME[ang]}<span class="kw">${ACG_ANGLE_THEME[ang]}</span></div><div class="acg-li-desc">${ACG_TEXT[p.key][ang]}</div><div class="acg-li-through">Runs through: ${through}</div></div></div>`;}).join("");
+    return `<div class="acg-planet" data-pk="${p.key}"><div class="acg-phead"><span class="acg-pglyph" style="border-color:${p.col};color:${p.col}">${p.glyph}</span><span class="acg-pname">${p.key} lines<small>${p.kw.join(" · ")}</small></span><span class="acg-pchev">▾</span></div><div class="acg-pbody">${lines}</div></div>`;}).join("");
+  box.querySelectorAll(".acg-planet").forEach(pl=>{const head=pl.querySelector(".acg-phead"),body=pl.querySelector(".acg-pbody");head.addEventListener("click",()=>{const o=pl.classList.toggle("open");body.style.maxHeight=o?body.scrollHeight+"px":"0";});});
+}
+function renderAcgCrossings(){
+  const box=$("acg-cross");if(!box)return;let all=acgAllCrossings();
+  const score=c=>{let s=0;[c.a,c.b].forEach(k=>{s+=({Jupiter:3,Venus:2,Sun:2,Moon:1,Mercury:1,Mars:0,Uranus:0,Neptune:0,Saturn:-1,Pluto:-1})[k]||0;});if(_isOcean(c.region))s-=3;return s;};
+  const seen=new Set(),ranked=all.map(c=>({c,s:score(c)})).sort((a,b)=>b.s-a.s),picks=[];
+  for(const {c} of ranked){const land=!_isOcean(c.region);const tag=[c.a,c.b].sort().join("|")+"|"+c.region;if(seen.has(tag))continue;seen.add(tag);if(picks.length<14&&land)picks.push(c);}
+  if(!picks.length){box.innerHTML=`<div class="acg-empty">No notable crossings on land. Add your birth time for full accuracy.</div>`;return;}
+  box.innerHTML=picks.map(c=>{const pa=ACG_PLANETS.find(x=>x.key===c.a),pb=ACG_PLANETS.find(x=>x.key===c.b);
+    return `<div class="acg-cross-item"><div class="acg-cross-marks"><span class="acg-cross-pair"><span style="color:${pa.col}">${pa.glyph}</span><span style="color:${pb.col}">${pb.glyph}</span></span><span class="acg-cross-place">${c.region}</span></div><div class="acg-cross-body"><div class="acg-cross-title">${c.a} ${c.angA} ✕ ${c.b} ${c.angB}</div><div class="acg-cross-desc">${crossText(c.a,c.b)}</div></div></div>`;}).join("");
+}
+
+/* ===== fullscreen zoom + time-step ===== */
+let acgFsZoom=1,acgFsPanX=0,acgFsPanY=0,acgPlayTimer=null;
+function acgApplyTransform(){const svg=$("acg-fs-map");if(!svg)return;svg.style.transform=`translate(-50%,-50%) translate(${acgFsPanX}px,${acgFsPanY}px) scale(${acgFsZoom})`;const lab=$("acg-zlabel");if(lab)lab.textContent=acgFsZoom.toFixed(1)+"×";}
+function acgSetZoom(z){acgFsZoom=Math.max(1,Math.min(8,z));if(acgFsZoom===1){acgFsPanX=0;acgFsPanY=0;}acgApplyTransform();}
+function acgRenderFsMap(){
+  const svg=$("acg-fs-map");if(!svg)return;svg.innerHTML=acgBuildSvg(true);
+  const tip=$("acg-fs-tip"),stage=$("acg-fs-stage");
+  svg.querySelectorAll(".acg-hit").forEach(el=>el.addEventListener("click",e=>{e.stopPropagation();
+    svg.querySelectorAll(".acg-line").forEach(l=>l.classList.remove("hot"));
+    svg.querySelectorAll(`.acg-line[data-key="${el.dataset.key}"][data-angle="${el.dataset.angle}"]`).forEach(l=>l.classList.add("hot"));
+    acgShowTip(tip,stage,el,el.dataset.key,el.dataset.angle,null);}));
+  svg.querySelectorAll(".acg-cross-dot").forEach(el=>el.addEventListener("click",e=>{e.stopPropagation();acgShowTip(tip,stage,el,null,null,el.dataset.cross);}));
+}
+function acgTimeReadout(){const el=$("acg-time-read");if(!el)return;
+  if(acgOffsetSec===0){el.innerHTML=`<span style="color:var(--gold)">● birth moment</span> — your true chart`;return;}
+  const sign=acgOffsetSec>0?"+":"−",abs=Math.abs(acgOffsetSec),h=Math.floor(abs/3600),m=Math.floor((abs%3600)/60),s=abs%60,parts=[];
+  if(h)parts.push(h+"h");if(m)parts.push(m+"m");if(s||!parts.length)parts.push(s+"s");
+  el.innerHTML=`sky moved <span style="color:var(--gold)">${sign}${parts.join(" ")}</span> · lines drift ~15°/hour`;}
+function acgRefreshFsFilter(){renderAcgFilterInto("acg-fs-filter",()=>{acgRenderFsMap();acgRefreshFsFilter();});}
+function acgStep(sec){acgOffsetSec+=sec;computeAcgLines();acgRenderFsMap();acgTimeReadout();acgRefreshFsFilter();}
+function acgTogglePlay(){const btn=$("acg-play");
+  if(acgPlayTimer){clearInterval(acgPlayTimer);acgPlayTimer=null;btn.classList.remove("on");btn.textContent="▶ play";return;}
+  btn.classList.add("on");btn.textContent="⏸ stop";acgPlayTimer=setInterval(()=>acgStep(30),140);}
+function acgStopPlay(){if(acgPlayTimer){clearInterval(acgPlayTimer);acgPlayTimer=null;const b=$("acg-play");if(b){b.classList.remove("on");b.textContent="▶ play";}}}
+function openAcgFullscreen(){
+  if(!acgGenerated)return;
+  const fs=$("acg-fs");fs.classList.remove("hide");fs.setAttribute("aria-hidden","false");
+  $("acg-fs-name").textContent=profile&&profile.name?profile.name+"'s":"Your";
+  acgFsZoom=1;acgFsPanX=0;acgFsPanY=0;acgRenderFsMap();acgApplyTransform();acgTimeReadout();acgRefreshFsFilter();
+  document.body.style.overflow="hidden";
+}
+function closeAcgFullscreen(){
+  acgStopPlay();const fs=$("acg-fs");fs.classList.add("hide");fs.setAttribute("aria-hidden","true");
+  document.body.style.overflow="";
+  if(acgGenerated){renderAcgMap();renderAcgSummary();renderAcgDetail();renderAcgCrossings();}
+}
+function wireAcgFsGestures(){
+  const stage=$("acg-fs-stage");if(!stage||stage.dataset.wired)return;stage.dataset.wired="1";
+  let dragging=false,lastX=0,lastY=0,pinchDist=0,pinchZoom0=1;
+  const dist=(a,b)=>Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+  stage.addEventListener("touchstart",e=>{if(e.touches.length===1){dragging=true;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;}else if(e.touches.length===2){dragging=false;pinchDist=dist(e.touches[0],e.touches[1]);pinchZoom0=acgFsZoom;}},{passive:true});
+  stage.addEventListener("touchmove",e=>{if(e.touches.length===2){const d=dist(e.touches[0],e.touches[1]);if(pinchDist>0)acgSetZoom(pinchZoom0*d/pinchDist);e.preventDefault();}else if(dragging&&e.touches.length===1&&acgFsZoom>1){acgFsPanX+=e.touches[0].clientX-lastX;acgFsPanY+=e.touches[0].clientY-lastY;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;acgApplyTransform();e.preventDefault();}},{passive:false});
+  stage.addEventListener("touchend",()=>{dragging=false;pinchDist=0;});
+  stage.addEventListener("mousedown",e=>{if(acgFsZoom>1){dragging=true;lastX=e.clientX;lastY=e.clientY;e.preventDefault();}});
+  window.addEventListener("mousemove",e=>{if(dragging){acgFsPanX+=e.clientX-lastX;acgFsPanY+=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;acgApplyTransform();}});
+  window.addEventListener("mouseup",()=>{dragging=false;});
+  stage.addEventListener("wheel",e=>{e.preventDefault();acgSetZoom(acgFsZoom*(e.deltaY<0?1.12:0.89));},{passive:false});
+  stage.addEventListener("click",e=>{if(e.target.tagName!=="path"&&e.target.tagName!=="circle"){$("acg-fs-tip").classList.add("hide");$("acg-fs-map").querySelectorAll(".acg-line").forEach(l=>l.classList.remove("hot"));}});
+}
+
+/* ===== ENTRY: explanation first, map on demand ===== */
+function renderAtlasLegend(){
+  const box=$("acg-planet-legend");if(!box)return;
+  box.innerHTML=ACG_PLANETS.map(p=>`<div class="acg-leg-row"><span class="acg-leg-g" style="border-color:${p.col};color:${p.col}">${p.glyph}</span><div class="acg-leg-b"><span class="acg-leg-n">${p.key}</span> <span class="acg-leg-k">— ${p.bring}</span></div></div>`).join("");
+}
+function renderAtlas(){
+  if(!profile)return;
+  renderAtlasLegend();
+  // reset the generate card / results when the profile changes
+  if(_acgBuiltForId!==activeId){
+    acgGenerated=false;acgFilter="all";acgOffsetSec=0;
+    const res=$("acg-results");if(res)res.classList.add("hide");
+    const gt=$("acg-gen-title");if(gt)gt.textContent="See your lines on the map";
+    const gb=$("acg-generate");if(gb){gb.textContent="Generate my map";gb.disabled=false;}
+  }
+  // birth-time note on the generate card
+  const sub=$("acg-gen-sub");
+  if(sub){sub.innerHTML=profile.time?"We'll plot all forty of your lines onto a world map using your exact birth moment, then read the strongest ones for you.":'<span style="color:var(--rose,#d98a9e)">No birth time set</span> — lines will use noon and can shift up to 15° per hour. Add your birth time in your profile for accurate lines.';}
+}
+function generateAtlasMap(){
+  if(!profile||!window.Astronomy)return;
+  if(!cachedNatal||_cacheProfileId!==profile.id)computeChartData();
+  acgBirthMs=buildBirthDate(profile).getTime();
+  acgOffsetSec=0;acgFilter="all";
+  computeAcgLines();
+  _acgBuiltForId=activeId;acgGenerated=true;
+  $("acg-results").classList.remove("hide");
+  renderAcgMap();
+  renderAcgFilterInto("acg-filter",()=>{renderAcgMap();renderAcgSummary();renderAcgDetail();renderAcgCrossings();});
+  renderAcgSummary();renderAcgDetail();renderAcgCrossings();
+  const gt=$("acg-gen-title");if(gt)gt.textContent="✓ Map generated below";
+  $("acg-results").scrollIntoView?$("acg-results").scrollIntoView({behavior:"smooth",block:"start"}):null;
+}
+
 function progressedDate(p){
   const birth=buildBirthDate(p);
   const now=new Date();
@@ -805,6 +1279,7 @@ function drawTriWheel(svgId,natal,angles,prog,transit){
 function computeChartData(){
   cachedNatal=computeChart(buildBirthDate(profile));
   cachedAngles=(profile.time&&profile.lat!=null)?computeAngles(buildBirthDate(profile),profile.lat,profile.lng):null;
+  _cacheProfileId=profile?profile.id:null;
 }
 function natalSummaryHtml(){
   const sun=signFromLon(cachedNatal.Sun),moon=signFromLon(cachedNatal.Moon);
@@ -1555,13 +2030,16 @@ function progressedAtAge(p,extraYears){
 function renderTriWheel(){
   if(!window.Astronomy||!profile){$("triwheel-section").classList.add("hide");return;}
   try{
-    const prog=computeProgressed(profile);
+    const tp=profile;
+    const natalForTri=(cachedNatal&&_cacheProfileId===tp.id)?cachedNatal:computeChart(buildBirthDate(tp));
+    const anglesForTri=(cachedAngles&&_cacheProfileId===tp.id)?cachedAngles:((tp.time&&tp.lat!=null)?computeAngles(buildBirthDate(tp),tp.lat,tp.lng):null);
+    const prog=computeProgressed(tp);
     const transit=computeChart(new Date());
-    drawTriWheel("tri-wheel",cachedNatal,cachedAngles,prog,transit);
-    const pSun=signFromLon(prog.Sun),pMoon=signFromLon(prog.Moon),nSun=signFromLon(cachedNatal.Sun);
+    drawTriWheel("tri-wheel",natalForTri,anglesForTri,prog,transit);
+    const pSun=signFromLon(prog.Sun),pMoon=signFromLon(prog.Moon),nSun=signFromLon(natalForTri.Sun);
     const pMerc=signFromLon(prog.Mercury),pVen=signFromLon(prog.Venus),pMars=signFromLon(prog.Mars);
-    const birth=buildBirthDate(profile);const age=Math.floor((new Date()-birth)/(365.25*24*3600*1000));
-    const cusps=cachedAngles?cachedAngles.cusps:null;
+    const birth=buildBirthDate(tp);const age=Math.floor((new Date()-birth)/(365.25*24*3600*1000));
+    const cusps=anglesForTri?anglesForTri.cusps:null;
     const moonHouse=cusps?houseOf(prog.Moon,cusps):null;
 
     // ===== WHO YOU ARE NOW =====
@@ -1569,7 +2047,7 @@ function renderTriWheel(){
     html+=`<div class="ir-item"><div class="h">☉ Progressed Sun in ${pSun.sign}</div><div class="b">Born with the Sun in ${nSun.sign}, your core identity has matured. Your progressed Sun is now in ${pSun.sign} — you're ${PROG_SUN[pSun.sign]}. ${pSun.sign!==nSun.sign?`This is a real shift from your birth Sun in ${nSun.sign}: you've grown into a noticeably different way of being yourself.`:`Still deepening your birth-sign themes — but the degree keeps advancing, ripening them year by year.`} The progressed Sun moves ~1° per year and changes sign roughly every 30 years, so this is a defining chapter of your whole life.</div></div>`;
     html+=`<div class="ir-item"><div class="h">☾ Progressed Moon in ${pMoon.sign}${moonHouse?` · ${ordinal(moonHouse)} house`:""}</div><div class="b">Your progressed Moon — the fastest progression, changing sign every ~2.5 years — is in ${pMoon.sign}. Emotionally, ${PROG_MOON[pMoon.sign]}.${moonHouse?` It's moving through your ${ordinal(moonHouse)} house, so ${HOUSE_LONG[moonHouse].area} is emotionally central for this ~2.5-year season.`:""} This is your current inner weather, and it will shift again soon.</div></div>`;
     // progressed inner planets — only if they've shifted from natal sign (more meaningful)
-    const nMerc=signFromLon(cachedNatal.Mercury),nVen=signFromLon(cachedNatal.Venus),nMars=signFromLon(cachedNatal.Mars);
+    const nMerc=signFromLon(natalForTri.Mercury),nVen=signFromLon(natalForTri.Venus),nMars=signFromLon(natalForTri.Mars);
     let shifts=[];
     if(pMerc.sign!==nMerc.sign)shifts.push(`Your progressed Mercury has moved into ${pMerc.sign} — you now ${PROG_INNER.Mercury[pMerc.sign]} compared to how you started.`);
     if(pVen.sign!==nVen.sign)shifts.push(`Your progressed Venus is in ${pVen.sign} — you've come to ${PROG_INNER.Venus[pVen.sign]}.`);
@@ -1583,7 +2061,7 @@ function renderTriWheel(){
     // ===== WHO YOU'RE BECOMING (30-year increments) =====
     html+=`<div class="ir"><h4>Who you're becoming</h4><div class="ir-item"><div class="b" style="opacity:.85">Because your progressed Sun changes sign about every 30 years, here's the identity chapter you're growing toward over the coming decades.</div></div>`;
     [30,60].forEach(yrs=>{
-      const fut=progressedAtAge(profile,yrs);
+      const fut=progressedAtAge(tp,yrs);
       const fSun=signFromLon(fut.Sun),fMoon=signFromLon(fut.Moon);
       const futAge=age+yrs;
       const changed=fSun.sign!==pSun.sign;
@@ -2339,7 +2817,22 @@ $("now-place").addEventListener("input",e=>{
   },320);
 });
 $("reroll").addEventListener("click",fetchReading);
-document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{const v=t.dataset.view;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");$("view-today").classList.toggle("hide",v!=="today");$("view-month").classList.toggle("hide",v!=="month");$("view-horo").classList.toggle("hide",v!=="horo");if(v==="today"){if(dayOffset!==0){dayOffset=0;renderDash();}}else if(v==="month"&&!monthRendered){renderMonth();monthRendered=true;}else if(v==="horo"){horoMonthOffset=0;horoYearOffset=0;try{renderMonthlyHoroscope();renderYearlyHoroscope();wireCollapsibles();}catch(e){}}}));
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{const v=t.dataset.view;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");$("view-today").classList.toggle("hide",v!=="today");$("view-month").classList.toggle("hide",v!=="month");$("view-horo").classList.toggle("hide",v!=="horo");$("view-atlas")&&$("view-atlas").classList.toggle("hide",v!=="atlas");if(v==="today"){if(dayOffset!==0){dayOffset=0;renderDash();}}else if(v==="month"&&!monthRendered){renderMonth();monthRendered=true;}else if(v==="horo"){horoMonthOffset=0;horoYearOffset=0;try{renderMonthlyHoroscope();renderYearlyHoroscope();wireCollapsibles();}catch(e){}}else if(v==="atlas"){try{renderAtlas();}catch(e){console.error(e);}}}));
+/* ---- Atlas wiring ---- */
+(function wireAtlas(){
+  var gen=$("acg-generate");if(gen)gen.addEventListener("click",function(){try{generateAtlasMap();}catch(e){console.error(e);}});
+  var exp=$("acg-expand");if(exp)exp.addEventListener("click",openAcgFullscreen);
+  var wrap=$("acg-mapwrap");if(wrap)wrap.addEventListener("click",function(e){if(e.target.tagName!=="path"&&e.target.tagName!=="circle")openAcgFullscreen();});
+  var fx=$("acg-fs-close");if(fx){fx.addEventListener("click",closeAcgFullscreen);fx.addEventListener("touchend",function(e){e.preventDefault();closeAcgFullscreen();});}
+  var zi=$("acg-zoom-in");if(zi)zi.addEventListener("click",function(){acgSetZoom(acgFsZoom*1.4);});
+  var zo=$("acg-zoom-out");if(zo)zo.addEventListener("click",function(){acgSetZoom(acgFsZoom/1.4);});
+  var zr=$("acg-zoom-reset");if(zr)zr.addEventListener("click",function(){acgSetZoom(1);});
+  document.querySelectorAll(".acg-stepbtn[data-step]").forEach(function(b){b.addEventListener("click",function(){acgStopPlay();acgStep(parseInt(b.dataset.step,10));});});
+  var pl=$("acg-play");if(pl)pl.addEventListener("click",acgTogglePlay);
+  var tr=$("acg-time-reset");if(tr)tr.addEventListener("click",function(){acgStopPlay();acgOffsetSec=0;computeAcgLines();acgRenderFsMap();acgTimeReadout();acgRefreshFsFilter();});
+  wireAcgFsGestures();
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("acg-fs").classList.contains("hide"))closeAcgFullscreen();});
+})();
 loadProfile();
 window.addEventListener("load",()=>{
   populateDateTime();loadNowLoc();
