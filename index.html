@@ -50,6 +50,10 @@
   .reading .lead{font-size:19px;font-style:italic;color:#fff}
   .skyrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
   .chip{font-family:"SF Mono",monospace;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:6px 11px;color:var(--dim)}
+  .angle-chip{border-color:var(--gold-soft,rgba(232,201,122,.4));color:var(--star);background:rgba(232,201,122,.06)}
+  .angle-chip b{color:var(--gold)}
+  .angle-chip.dim-chip{color:var(--dim);background:none;border-style:dashed}
+  .angle-chip.dim-chip b{color:var(--dim)}
   .chip b{color:var(--star);font-weight:600}
   .transit{display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)}
   .transit:last-child{border:none}
@@ -416,12 +420,7 @@
   .acg-zbtn:active{background:#1a2540}
   .acg-zreset{width:auto;padding:0 12px;font-size:12px;font-family:inherit}
   .acg-zlabel{font-family:"SF Mono",monospace;font-size:13px;color:var(--gold);min-width:46px;text-align:center}
-  .acg-time-read{text-align:center;font-family:"SF Mono",monospace;font-size:12px;color:var(--teal);margin-bottom:8px;min-height:16px}
-  .acg-step-row{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
-  .acg-stepbtn{background:#11192c;border:1px solid var(--line);color:var(--dim);font:inherit;font-size:12px;padding:7px 10px;border-radius:8px;cursor:pointer;min-width:42px}
-  .acg-stepbtn:active{background:#1a2540;color:var(--star)}
-  .acg-play{background:rgba(232,201,122,.14);border-color:var(--gold);color:var(--gold);font-weight:600;min-width:66px}
-  .acg-play.on{background:var(--gold);color:#1a1a2e}
+  .acg-fs-hint{text-align:center;font-size:12px;color:var(--dim);margin-bottom:8px}
   .acg-fs-filter{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-height:70px;overflow-y:auto;margin-top:10px}
 </style>
 
@@ -457,6 +456,7 @@
           <div id="now-ac-status" class="ac-status hide"></div>
         </div>
         <div class="skyrow" id="sky-chips" style="margin-top:14px"></div>
+        <div class="skyrow" id="angle-chips" style="margin-top:8px"></div>
       </div>
 
       <!-- the day's reading & guidance, before the technical detail -->
@@ -572,22 +572,28 @@
             <div id="acg-tip" class="acg-tip hide"></div>
           </div>
           <div class="acg-toolbar" id="acg-filter"></div>
-          <p class="dim" id="acg-mapnote" style="font-size:12px;margin-top:10px;line-height:1.5">Tap a planet chip to isolate its lines. Tap “enlarge” to zoom, pan, and watch the lines move through time.</p>
+          <p class="dim" id="acg-mapnote" style="font-size:12px;margin-top:10px;line-height:1.5">Tap a planet chip to focus on just its lines — the readings below update to match. Tap “enlarge” to zoom, pan, and watch the lines move through time.</p>
         </div>
 
-        <div class="between"><span class="label">Your strongest lines</span></div>
-        <div class="card">
-          <p class="dim" style="font-size:13px;margin-bottom:10px">The places where your chart speaks loudest. Expand any planet below for its full reading.</p>
-          <div id="acg-summary"></div>
+        <div id="acg-sec-summary">
+          <div class="between"><span class="label" id="acg-summary-label">Your strongest lines</span></div>
+          <div class="card">
+            <p class="dim" id="acg-summary-intro" style="font-size:13px;margin-bottom:10px">The places where your chart speaks loudest. Expand any planet below for its full reading.</p>
+            <div id="acg-summary"></div>
+          </div>
         </div>
 
-        <div class="between"><span class="label">Every planet, line by line</span></div>
-        <div class="card"><div id="acg-detail"></div></div>
+        <div id="acg-sec-detail">
+          <div class="between"><span class="label" id="acg-detail-label">Every planet, line by line</span></div>
+          <div class="card"><div id="acg-detail"></div></div>
+        </div>
 
-        <div class="between"><span class="label">Power spots · where two lines meet</span></div>
-        <div class="card">
-          <p class="dim" style="font-size:13px;margin-bottom:10px">Where two of your lines cross, both energies combine. These are your most charged places on Earth.</p>
-          <div id="acg-cross"></div>
+        <div id="acg-sec-cross">
+          <div class="between"><span class="label">Power spots · where two lines meet</span></div>
+          <div class="card">
+            <p class="dim" style="font-size:13px;margin-bottom:10px">Where two of your lines cross, both energies combine. These are your most charged places on Earth.</p>
+            <div id="acg-cross"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -610,17 +616,7 @@
         <button class="acg-zbtn" id="acg-zoom-in" type="button">+</button>
         <button class="acg-zbtn acg-zreset" id="acg-zoom-reset" type="button">reset</button>
       </div>
-      <div class="acg-time-read" id="acg-time-read"></div>
-      <div class="acg-step-row">
-        <button class="acg-stepbtn" data-step="-3600" type="button">−1h</button>
-        <button class="acg-stepbtn" data-step="-60" type="button">−1m</button>
-        <button class="acg-stepbtn" data-step="-1" type="button">−1s</button>
-        <button class="acg-stepbtn acg-play" id="acg-play" type="button">▶ play</button>
-        <button class="acg-stepbtn" data-step="1" type="button">+1s</button>
-        <button class="acg-stepbtn" data-step="60" type="button">+1m</button>
-        <button class="acg-stepbtn" data-step="3600" type="button">+1h</button>
-      </div>
-      <button class="linkbtn" id="acg-time-reset" type="button" style="color:var(--gold);font-size:12px;margin-top:8px">↺ back to birth moment</button>
+      <div class="acg-fs-hint">Pinch or scroll to zoom · drag to pan · tap a line to read it</div>
       <div class="acg-fs-filter" id="acg-fs-filter"></div>
     </div>
   </div>
@@ -1095,9 +1091,13 @@ function renderAcgMap(){
   svg.innerHTML=acgBuildSvg(true);
   const tip=$("acg-tip"),wrap=$("acg-mapwrap");
   svg.querySelectorAll(".acg-hit").forEach(el=>el.addEventListener("click",e=>{e.stopPropagation();
-    svg.querySelectorAll(".acg-line").forEach(l=>l.classList.remove("hot"));
-    svg.querySelectorAll(`.acg-line[data-key="${el.dataset.key}"][data-angle="${el.dataset.angle}"]`).forEach(l=>l.classList.add("hot"));
-    acgShowTip(tip,wrap,el,el.dataset.key,el.dataset.angle,null);}));
+    const key=el.dataset.key,angle=el.dataset.angle;
+    acgShowTip(tip,wrap,el,key,angle,null);
+    // tapping a line focuses that planet: update chips + readings below to match
+    if(acgFilter!==key){acgFilter=key;renderAcgMap();renderAcgFilterInto("acg-filter",()=>{renderAcgMap();renderAcgReadings();});renderAcgReadings();
+      const svg2=$("acg-map");if(svg2)svg2.querySelectorAll(`.acg-line[data-key="${key}"][data-angle="${angle}"]`).forEach(l=>l.classList.add("hot"));
+    }else{svg.querySelectorAll(".acg-line").forEach(l=>l.classList.remove("hot"));svg.querySelectorAll(`.acg-line[data-key="${key}"][data-angle="${angle}"]`).forEach(l=>l.classList.add("hot"));}
+  }));
   svg.querySelectorAll(".acg-cross-dot").forEach(el=>el.addEventListener("click",e=>{e.stopPropagation();acgShowTip(tip,wrap,el,null,null,el.dataset.cross);}));
 }
 function renderAcgFilterInto(id,onPick){
@@ -1115,7 +1115,23 @@ function acgRegionsForLine(key,angle){
   return hit;
 }
 function renderAcgSummary(){
-  const box=$("acg-summary");if(!box)return;const picks=[];
+  const box=$("acg-summary");if(!box)return;
+  const lab=$("acg-summary-label"),intro=$("acg-summary-intro");
+  if(acgFilter!=="all"&&acgLines[acgFilter]){
+    // RECAP of the selected planet: its four lines at a glance
+    const p=ACG_PLANETS.find(x=>x.key===acgFilter);
+    if(lab)lab.textContent=`${p.key} — at a glance`;
+    if(intro)intro.innerHTML=`${p.glyph} <b style="color:${p.col}">${p.key}</b> brings ${p.bring}. Here's where each of its four lines falls for you. The full reading is just below.`;
+    box.innerHTML=ACG_ORDER.map(a=>{const regions=acgRegionsForLine(acgFilter,a);const where=regions.length?regions.slice(0,3).join(" · "):"mostly ocean";const tagcol=(a==="MC"||a==="IC")?"var(--gold)":"var(--teal)";
+      return `<div class="acg-sum-item"><span class="acg-sum-g" style="border-color:${tagcol};color:${tagcol};font-family:'SF Mono',monospace;font-size:11px;font-weight:700">${a}</span>
+        <div class="acg-sum-b"><div class="acg-sum-t">${ACG_ANGLE_NAME[a]} — ${ACG_ANGLE_THEME[a].split(" & ")[0]}</div>
+        <div class="acg-sum-d">${ACG_TEXT[acgFilter][a]}</div><div class="acg-sum-where">↳ ${where}</div></div></div>`;}).join("");
+    return;
+  }
+  // ALL: strongest lines across the chart
+  if(lab)lab.textContent="Your strongest lines";
+  if(intro)intro.innerHTML="The places where your chart speaks loudest. Pick a planet above to focus on it, or expand any planet below for its full reading.";
+  const picks=[];
   const want=[["Jupiter","MC"],["Jupiter","AC"],["Venus","DC"],["Sun","MC"],["Venus","AC"],["Sun","AC"],["Jupiter","DC"]];
   for(const [k,a] of want){if(acgLines[k]){const regions=acgRegionsForLine(k,a);if(regions.length)picks.push({k,a,regions});}if(picks.length>=5)break;}
   if(!picks.length){box.innerHTML=`<div class="acg-empty">Add your birth time to see your strongest lines.</div>`;return;}
@@ -1125,11 +1141,27 @@ function renderAcgSummary(){
       <div class="acg-sum-d">${ACG_TEXT[k][a]}</div><div class="acg-sum-where">↳ ${regions.slice(0,3).join(" · ")}</div></div></div>`;}).join("");
 }
 function renderAcgDetail(){
-  const box=$("acg-detail");if(!box)return;const keys=ACG_PLANETS.filter(p=>acgLines[p.key]);
+  const box=$("acg-detail");if(!box)return;
+  const lab=$("acg-detail-label");
+  let keys=ACG_PLANETS.filter(p=>acgLines[p.key]);
+  const focused=(acgFilter!=="all"&&acgLines[acgFilter]);
+  if(focused){keys=keys.filter(p=>p.key===acgFilter);if(lab)lab.textContent=`${acgFilter} — full reading`;}
+  else if(lab)lab.textContent="Every planet, line by line";
   box.innerHTML=keys.map(p=>{const lines=ACG_ORDER.map(ang=>{const regions=acgRegionsForLine(p.key,ang);const through=regions.length?regions.slice(0,4).join(", "):"mostly ocean";const tagcol=(ang==="MC"||ang==="IC")?"var(--gold)":"var(--teal)";
     return `<div class="acg-line-item"><span class="acg-angle-tag" style="color:${tagcol}">${ang}</span><div class="acg-li-body"><div class="acg-li-title">${ACG_ANGLE_NAME[ang]}<span class="kw">${ACG_ANGLE_THEME[ang]}</span></div><div class="acg-li-desc">${ACG_TEXT[p.key][ang]}</div><div class="acg-li-through">Runs through: ${through}</div></div></div>`;}).join("");
-    return `<div class="acg-planet" data-pk="${p.key}"><div class="acg-phead"><span class="acg-pglyph" style="border-color:${p.col};color:${p.col}">${p.glyph}</span><span class="acg-pname">${p.key} lines<small>${p.kw.join(" · ")}</small></span><span class="acg-pchev">▾</span></div><div class="acg-pbody">${lines}</div></div>`;}).join("");
-  box.querySelectorAll(".acg-planet").forEach(pl=>{const head=pl.querySelector(".acg-phead"),body=pl.querySelector(".acg-pbody");head.addEventListener("click",()=>{const o=pl.classList.toggle("open");body.style.maxHeight=o?body.scrollHeight+"px":"0";});});
+    const openCls=focused?" open":"";
+    return `<div class="acg-planet${openCls}" data-pk="${p.key}"><div class="acg-phead"><span class="acg-pglyph" style="border-color:${p.col};color:${p.col}">${p.glyph}</span><span class="acg-pname">${p.key} lines<small>${p.kw.join(" · ")}</small></span><span class="acg-pchev">▾</span></div><div class="acg-pbody">${lines}</div></div>`;}).join("");
+  box.querySelectorAll(".acg-planet").forEach(pl=>{const head=pl.querySelector(".acg-phead"),body=pl.querySelector(".acg-pbody");
+    if(pl.classList.contains("open"))body.style.maxHeight=body.scrollHeight+"px";
+    head.addEventListener("click",()=>{const o=pl.classList.toggle("open");body.style.maxHeight=o?body.scrollHeight+"px":"0";});});
+}
+function renderAcgReadings(){
+  // crossings (power spots) only on the "all" tab
+  const crossSec=$("acg-sec-cross");
+  if(crossSec)crossSec.classList.toggle("hide",acgFilter!=="all");
+  renderAcgSummary();
+  renderAcgDetail();
+  if(acgFilter==="all")renderAcgCrossings();
 }
 function renderAcgCrossings(){
   const box=$("acg-cross");if(!box)return;let all=acgAllCrossings();
@@ -1154,28 +1186,23 @@ function acgRenderFsMap(){
     acgShowTip(tip,stage,el,el.dataset.key,el.dataset.angle,null);}));
   svg.querySelectorAll(".acg-cross-dot").forEach(el=>el.addEventListener("click",e=>{e.stopPropagation();acgShowTip(tip,stage,el,null,null,el.dataset.cross);}));
 }
-function acgTimeReadout(){const el=$("acg-time-read");if(!el)return;
-  if(acgOffsetSec===0){el.innerHTML=`<span style="color:var(--gold)">● birth moment</span> — your true chart`;return;}
-  const sign=acgOffsetSec>0?"+":"−",abs=Math.abs(acgOffsetSec),h=Math.floor(abs/3600),m=Math.floor((abs%3600)/60),s=abs%60,parts=[];
-  if(h)parts.push(h+"h");if(m)parts.push(m+"m");if(s||!parts.length)parts.push(s+"s");
-  el.innerHTML=`sky moved <span style="color:var(--gold)">${sign}${parts.join(" ")}</span> · lines drift ~15°/hour`;}
 function acgRefreshFsFilter(){renderAcgFilterInto("acg-fs-filter",()=>{acgRenderFsMap();acgRefreshFsFilter();});}
-function acgStep(sec){acgOffsetSec+=sec;computeAcgLines();acgRenderFsMap();acgTimeReadout();acgRefreshFsFilter();}
-function acgTogglePlay(){const btn=$("acg-play");
-  if(acgPlayTimer){clearInterval(acgPlayTimer);acgPlayTimer=null;btn.classList.remove("on");btn.textContent="▶ play";return;}
-  btn.classList.add("on");btn.textContent="⏸ stop";acgPlayTimer=setInterval(()=>acgStep(30),140);}
-function acgStopPlay(){if(acgPlayTimer){clearInterval(acgPlayTimer);acgPlayTimer=null;const b=$("acg-play");if(b){b.classList.remove("on");b.textContent="▶ play";}}}
+function acgStopPlay(){if(acgPlayTimer){clearInterval(acgPlayTimer);acgPlayTimer=null;}}
 function openAcgFullscreen(){
   if(!acgGenerated)return;
   const fs=$("acg-fs");fs.classList.remove("hide");fs.setAttribute("aria-hidden","false");
   $("acg-fs-name").textContent=profile&&profile.name?profile.name+"'s":"Your";
-  acgFsZoom=1;acgFsPanX=0;acgFsPanY=0;acgRenderFsMap();acgApplyTransform();acgTimeReadout();acgRefreshFsFilter();
+  acgFsZoom=1;acgFsPanX=0;acgFsPanY=0;acgRenderFsMap();acgApplyTransform();acgRefreshFsFilter();
   document.body.style.overflow="hidden";
 }
 function closeAcgFullscreen(){
   acgStopPlay();const fs=$("acg-fs");fs.classList.add("hide");fs.setAttribute("aria-hidden","true");
   document.body.style.overflow="";
-  if(acgGenerated){renderAcgMap();renderAcgSummary();renderAcgDetail();renderAcgCrossings();}
+  if(acgGenerated){
+    acgOffsetSec=0;            // safety: always show the true birth-moment map
+    computeAcgLines();
+    renderAcgMap();renderAcgReadings();
+  }
 }
 function wireAcgFsGestures(){
   const stage=$("acg-fs-stage");if(!stage||stage.dataset.wired)return;stage.dataset.wired="1";
@@ -1219,8 +1246,8 @@ function generateAtlasMap(){
   _acgBuiltForId=activeId;acgGenerated=true;
   $("acg-results").classList.remove("hide");
   renderAcgMap();
-  renderAcgFilterInto("acg-filter",()=>{renderAcgMap();renderAcgSummary();renderAcgDetail();renderAcgCrossings();});
-  renderAcgSummary();renderAcgDetail();renderAcgCrossings();
+  renderAcgFilterInto("acg-filter",()=>{renderAcgMap();renderAcgReadings();});
+  renderAcgReadings();
   const gt=$("acg-gen-title");if(gt)gt.textContent="✓ Map generated below";
   $("acg-results").scrollIntoView?$("acg-results").scrollIntoView({behavior:"smooth",block:"start"}):null;
 }
@@ -1395,6 +1422,17 @@ function renderDash(){
     // retrograde check: compare position a day later
     let rx="";try{const tomorrow=new Date(now.getTime()+86400000);const lon2=eclipticLon(p.key,tomorrow);let d=lon2-cachedTransit[p.key];if(d>180)d-=360;if(d<-180)d+=360;if(d<0&&p.key!=="Moon")rx=' <span class="rx">℞</span>';}catch(e){}
     return `<span class="chip">${p.glyph} <b>${p.key}</b> ${deg}°${String(min).padStart(2,"0")}′ ${s.sign}${rx}</span>`;}).join("");
+  // natal chart angles: Ascendant + Midheaven degrees (need birth time + place)
+  const angBox=$("angle-chips");
+  if(angBox){
+    if(cachedAngles){
+      const fmt=(lon)=>{const s=signFromLon(lon);const d=Math.floor(s.degInSign);const m=Math.floor((s.degInSign-d)*60);return `${d}°${String(m).padStart(2,"0")}′ ${s.sign}`;};
+      angBox.innerHTML=`<span class="chip angle-chip">⬆ <b>Ascendant</b> ${fmt(cachedAngles.asc)}</span><span class="chip angle-chip">⟂ <b>Midheaven</b> ${fmt(cachedAngles.mc)}</span>`;
+      angBox.classList.remove("hide");
+    }else{
+      angBox.innerHTML=`<span class="chip angle-chip dim-chip">Add birth time &amp; place for your Ascendant &amp; Midheaven</span>`;
+    }
+  }
   cachedEvents=notableEvents(now);
   renderEvents(cachedEvents);
   renderRelateToday(cachedTransit);
@@ -2827,9 +2865,6 @@ document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{con
   var zi=$("acg-zoom-in");if(zi)zi.addEventListener("click",function(){acgSetZoom(acgFsZoom*1.4);});
   var zo=$("acg-zoom-out");if(zo)zo.addEventListener("click",function(){acgSetZoom(acgFsZoom/1.4);});
   var zr=$("acg-zoom-reset");if(zr)zr.addEventListener("click",function(){acgSetZoom(1);});
-  document.querySelectorAll(".acg-stepbtn[data-step]").forEach(function(b){b.addEventListener("click",function(){acgStopPlay();acgStep(parseInt(b.dataset.step,10));});});
-  var pl=$("acg-play");if(pl)pl.addEventListener("click",acgTogglePlay);
-  var tr=$("acg-time-reset");if(tr)tr.addEventListener("click",function(){acgStopPlay();acgOffsetSec=0;computeAcgLines();acgRenderFsMap();acgTimeReadout();acgRefreshFsFilter();});
   wireAcgFsGestures();
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("acg-fs").classList.contains("hide"))closeAcgFullscreen();});
 })();
