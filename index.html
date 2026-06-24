@@ -118,6 +118,10 @@
   .tarot-name{font-size:22px;color:var(--gold);font-family:Georgia,serif;margin-bottom:6px}
   .tarot-kw{font-family:"SF Mono",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:12px}
   .tarot-day{font-size:14px;color:var(--dim);line-height:1.55}
+  .tarot-locked{text-align:center;padding:26px 16px;border:1px dashed var(--line);border-radius:16px;background:linear-gradient(160deg,#141828,#0c1020)}
+  .tarot-lock-glyph{font-size:30px;opacity:.5;margin-bottom:8px}
+  .tarot-lock-t{font-size:15px;color:var(--star);margin-bottom:6px}
+  .tarot-lock-s{font-size:13px;color:var(--dim);line-height:1.5;max-width:300px;margin:0 auto}
   .syn-score{margin:6px 0 16px;padding:14px;background:rgba(255,255,255,.02);border-radius:12px}
   .syn-meter{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
   .syn-lbl{font-size:13px;color:var(--dim)}
@@ -296,8 +300,8 @@
     <div id="triwheel-section" class="hide">
       <div class="between"><span class="label">Who you're becoming</span></div>
       <div class="card">
-        <p class="dim" style="font-size:13px;margin-bottom:6px">Three charts in one: your <span style="color:#e8e8f0">natal</span> self (birth), your <span style="color:#7fc8c4">progressed</span> self (who you've grown into), and today's <span style="color:#d98a9e">transits</span> (the sky right now).</p>
-        <div class="wheelwrap"><svg class="wheel" id="tri-wheel" viewBox="0 0 400 400"></svg></div>
+        <p class="dim" style="font-size:13px;margin-bottom:6px">Three charts in one: your <span style="color:#e8e8f0">natal</span> self (birth), your <span style="color:#7fc8c4">progressed</span> self (who you've grown into), and the <span style="color:#d98a9e">transits</span> ticking live right now — watch the outer rose planets drift against your chart, each at its own speed (the Moon moves fastest, Pluto barely at all).</p>
+        <div class="wheelwrap"><svg class="wheel" id="tri-wheel" viewBox="-30 -30 460 460"></svg></div>
         <div class="trilegend"><span class="tl-nat">● natal</span><span class="tl-prog">● progressed</span><span class="tl-trans">● transits</span></div>
         <div id="prog-body" style="margin-top:16px"></div>
       </div>
@@ -351,8 +355,9 @@
   .acg-leg-k{font-family:"SF Mono",monospace;font-size:11px;color:var(--dim);letter-spacing:.04em}
   .acg-gen-card{text-align:center}
   .acg-gen-title{font-size:18px;color:#fff;font-style:italic;margin-bottom:6px}
-  .acg-mapwrap{position:relative;width:100%;background:linear-gradient(180deg,#0a1124,#0c1426);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer}
-  svg#acg-map,svg#acg-fs-map{width:100%;height:auto;display:block;touch-action:none}
+  .acg-mapwrap{position:relative;width:100%;aspect-ratio:2/1;background:linear-gradient(180deg,#0a1124,#0c1426);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer}
+  svg#acg-map{width:100%;height:100%;display:block;touch-action:none}
+  svg#acg-fs-map{width:100%;height:100%;display:block;touch-action:none}
   .acg-coast{fill:#1a2742;stroke:rgba(127,200,196,.18);stroke-width:.35}
   .acg-grid{stroke:rgba(180,196,255,.07);stroke-width:.3}
   .acg-equator{stroke:rgba(180,196,255,.14);stroke-width:.4;stroke-dasharray:2 2}
@@ -369,7 +374,7 @@
   .acg-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
   .acg-fchip{background:#0c1120;border:1px solid var(--line);color:var(--dim);font:inherit;font-size:12px;padding:6px 11px;border-radius:999px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
   .acg-fchip:hover{border-color:var(--gold)}
-  .acg-fchip.on{background:rgba(232,201,122,.12);border-color:var(--gold);color:var(--star)}
+  .acg-fchip.on{background:rgba(232,201,122,.2);border-color:var(--gold);color:#fff;box-shadow:0 0 0 1px var(--gold)}
   .acg-fchip .dotc{width:9px;height:9px;border-radius:50%;display:inline-block}
   .acg-fchip.all-chip{border-style:dashed;color:var(--teal)}
   .acg-sum-item{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
@@ -413,7 +418,7 @@
   .acg-fs-x{background:#11192c;border:1px solid var(--teal);color:var(--teal);font:inherit;font-size:14px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer}
   .acg-fs-x:active{background:#1a2540}
   .acg-fs-stage{flex:1 1 auto;position:relative;overflow:hidden;background:#0a1124;touch-action:none;min-height:0}
-  .acg-fs-stage svg{position:absolute;top:50%;left:50%;width:100%;transform-origin:center center;will-change:transform}
+  .acg-fs-stage svg{position:absolute;top:0;left:0;width:100%;height:100%;transform-origin:0 0;will-change:transform}
   .acg-fs-controls{flex:0 0 auto;padding:12px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:#0a0f1c}
   .acg-fs-zoom{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:10px}
   .acg-zbtn{width:38px;height:38px;border-radius:10px;background:#11192c;border:1px solid var(--line);color:var(--star);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -862,7 +867,30 @@ function saveProfile(p){
   else{p.id=p.id||newId();profiles.push(p);}
   activeId=p.id;profile=p;persistProfiles();
 }
-function switchProfile(id){const p=profiles.find(x=>x.id===id);if(!p)return;activeId=id;profile=p;persistProfiles();showNatal();}
+function switchProfile(id){const p=profiles.find(x=>x.id===id);if(!p)return;activeId=id;profile=p;persistProfiles();
+  // stay on whatever page you're already on instead of always jumping to the natal chart
+  stopTriWheelLive();
+  const onDash=$("dash")&&!$("dash").classList.contains("hide");
+  const onNatal=$("natal")&&!$("natal").classList.contains("hide");
+  if(onDash){
+    // recompute this profile's chart, refresh the dashboard in place, keep the current tab + day
+    _cacheProfileId=null;computeChartData();
+    monthRendered=false;
+    // wipe atlas cache so it rebuilds for the new profile when that tab is next shown
+    acgGenerated=false;_acgBuiltForId=null;
+    renderDash();
+    renderProfileBar&&renderProfileBar();
+    // if the user is currently on a non-today tab, re-render that tab's content for the new profile
+    const active=document.querySelector(".tab.active");const v=active?active.dataset.view:"today";
+    if(v==="month"){renderMonth();monthRendered=true;}
+    else if(v==="horo"){try{renderMonthlyHoroscope();renderYearlyHoroscope();wireCollapsibles();}catch(e){}}
+    else if(v==="atlas"){try{renderAtlas();}catch(e){console.error(e);}}
+  }else if(onNatal){
+    showNatal();
+  }else{
+    showNatal();
+  }
+}
 function deleteProfile(id){profiles=profiles.filter(x=>x.id!==id);if(activeId===id){profile=profiles[0]||null;activeId=profile?profile.id:null;}persistProfiles();}
 function startNewProfile(){profile=null;chosenPlace=null;$("i-name").value="";setDateTime("","");$("i-place").value="";$("place-set").classList.add("hide");showOnboard();}
 /* ---- date/time scroll selectors ---- */
@@ -979,6 +1007,8 @@ function acgLinesFor(body,date,gst){
   return {ra,dec,mcLon,icLon,acPts,dcPts};
 }
 const acgX=lon=>lon+180, acgY=lat=>90-lat;
+// human label for a meridian longitude, e.g. 129.4 -> "129.4°E", -73 -> "73.0°W"
+function acgLonLabel(lon){const v=_to180(lon);const dir=v>=0?"E":"W";return `${Math.abs(v).toFixed(1)}°${dir}`;}
 function acgCurvePath(pts){
   const segs=[];let cur=[];
   for(let i=0;i<pts.length;i++){const p=pts[i];
@@ -1093,8 +1123,8 @@ function renderAcgMap(){
   svg.querySelectorAll(".acg-hit").forEach(el=>el.addEventListener("click",e=>{e.stopPropagation();
     const key=el.dataset.key,angle=el.dataset.angle;
     acgShowTip(tip,wrap,el,key,angle,null);
-    // tapping a line focuses that planet: update chips + readings below to match
-    if(acgFilter!==key){acgFilter=key;renderAcgMap();renderAcgFilterInto("acg-filter",()=>{renderAcgMap();renderAcgReadings();});renderAcgReadings();
+    // tapping a line focuses that planet: rebuild chips + map + readings to match
+    if(acgFilter!==key){acgFilter=key;acgApplyFilter();
       const svg2=$("acg-map");if(svg2)svg2.querySelectorAll(`.acg-line[data-key="${key}"][data-angle="${angle}"]`).forEach(l=>l.classList.add("hot"));
     }else{svg.querySelectorAll(".acg-line").forEach(l=>l.classList.remove("hot"));svg.querySelectorAll(`.acg-line[data-key="${key}"][data-angle="${angle}"]`).forEach(l=>l.classList.add("hot"));}
   }));
@@ -1123,9 +1153,12 @@ function renderAcgSummary(){
     if(lab)lab.textContent=`${p.key} — at a glance`;
     if(intro)intro.innerHTML=`${p.glyph} <b style="color:${p.col}">${p.key}</b> brings ${p.bring}. Here's where each of its four lines falls for you. The full reading is just below.`;
     box.innerHTML=ACG_ORDER.map(a=>{const regions=acgRegionsForLine(acgFilter,a);const where=regions.length?regions.slice(0,3).join(" · "):"mostly ocean";const tagcol=(a==="MC"||a==="IC")?"var(--gold)":"var(--teal)";
+      const L=acgLines[acgFilter];let mer="";
+      if(L&&a==="MC")mer=` <span style="color:var(--gold)">· ${acgLonLabel(L.mcLon)}</span>`;
+      else if(L&&a==="IC")mer=` <span style="color:var(--gold)">· ${acgLonLabel(L.icLon)}</span>`;
       return `<div class="acg-sum-item"><span class="acg-sum-g" style="border-color:${tagcol};color:${tagcol};font-family:'SF Mono',monospace;font-size:11px;font-weight:700">${a}</span>
         <div class="acg-sum-b"><div class="acg-sum-t">${ACG_ANGLE_NAME[a]} — ${ACG_ANGLE_THEME[a].split(" & ")[0]}</div>
-        <div class="acg-sum-d">${ACG_TEXT[acgFilter][a]}</div><div class="acg-sum-where">↳ ${where}</div></div></div>`;}).join("");
+        <div class="acg-sum-d">${ACG_TEXT[acgFilter][a]}</div><div class="acg-sum-where">↳ ${where}${mer}</div></div></div>`;}).join("");
     return;
   }
   // ALL: strongest lines across the chart
@@ -1148,12 +1181,22 @@ function renderAcgDetail(){
   if(focused){keys=keys.filter(p=>p.key===acgFilter);if(lab)lab.textContent=`${acgFilter} — full reading`;}
   else if(lab)lab.textContent="Every planet, line by line";
   box.innerHTML=keys.map(p=>{const lines=ACG_ORDER.map(ang=>{const regions=acgRegionsForLine(p.key,ang);const through=regions.length?regions.slice(0,4).join(", "):"mostly ocean";const tagcol=(ang==="MC"||ang==="IC")?"var(--gold)":"var(--teal)";
-    return `<div class="acg-line-item"><span class="acg-angle-tag" style="color:${tagcol}">${ang}</span><div class="acg-li-body"><div class="acg-li-title">${ACG_ANGLE_NAME[ang]}<span class="kw">${ACG_ANGLE_THEME[ang]}</span></div><div class="acg-li-desc">${ACG_TEXT[p.key][ang]}</div><div class="acg-li-through">Runs through: ${through}</div></div></div>`;}).join("");
+    // MC/IC are vertical meridian lines at a fixed longitude — show that exact longitude
+    let meridian="";const L=acgLines[p.key];
+    if(L&&ang==="MC")meridian=` <span style="color:var(--gold)">· line at ${acgLonLabel(L.mcLon)}</span>`;
+    else if(L&&ang==="IC")meridian=` <span style="color:var(--gold)">· line at ${acgLonLabel(L.icLon)}</span>`;
+    return `<div class="acg-line-item"><span class="acg-angle-tag" style="color:${tagcol}">${ang}</span><div class="acg-li-body"><div class="acg-li-title">${ACG_ANGLE_NAME[ang]}<span class="kw">${ACG_ANGLE_THEME[ang]}</span></div><div class="acg-li-desc">${ACG_TEXT[p.key][ang]}</div><div class="acg-li-through">Runs through: ${through}${meridian}</div></div></div>`;}).join("");
     const openCls=focused?" open":"";
     return `<div class="acg-planet${openCls}" data-pk="${p.key}"><div class="acg-phead"><span class="acg-pglyph" style="border-color:${p.col};color:${p.col}">${p.glyph}</span><span class="acg-pname">${p.key} lines<small>${p.kw.join(" · ")}</small></span><span class="acg-pchev">▾</span></div><div class="acg-pbody">${lines}</div></div>`;}).join("");
   box.querySelectorAll(".acg-planet").forEach(pl=>{const head=pl.querySelector(".acg-phead"),body=pl.querySelector(".acg-pbody");
     if(pl.classList.contains("open"))body.style.maxHeight=body.scrollHeight+"px";
     head.addEventListener("click",()=>{const o=pl.classList.toggle("open");body.style.maxHeight=o?body.scrollHeight+"px":"0";});});
+}
+function acgApplyFilter(){
+  // rebuild chips (updates the 'on' highlight), redraw map, refresh readings — all in sync
+  renderAcgFilterInto("acg-filter",acgApplyFilter);
+  renderAcgMap();
+  renderAcgReadings();
 }
 function renderAcgReadings(){
   // crossings (power spots) only on the "all" tab
@@ -1173,10 +1216,39 @@ function renderAcgCrossings(){
     return `<div class="acg-cross-item"><div class="acg-cross-marks"><span class="acg-cross-pair"><span style="color:${pa.col}">${pa.glyph}</span><span style="color:${pb.col}">${pb.glyph}</span></span><span class="acg-cross-place">${c.region}</span></div><div class="acg-cross-body"><div class="acg-cross-title">${c.a} ${c.angA} ✕ ${c.b} ${c.angB}</div><div class="acg-cross-desc">${crossText(c.a,c.b)}</div></div></div>`;}).join("");
 }
 
-/* ===== fullscreen zoom + time-step ===== */
+/* ===== fullscreen zoom + pan ===== */
 let acgFsZoom=1,acgFsPanX=0,acgFsPanY=0,acgPlayTimer=null;
-function acgApplyTransform(){const svg=$("acg-fs-map");if(!svg)return;svg.style.transform=`translate(-50%,-50%) translate(${acgFsPanX}px,${acgFsPanY}px) scale(${acgFsZoom})`;const lab=$("acg-zlabel");if(lab)lab.textContent=acgFsZoom.toFixed(1)+"×";}
-function acgSetZoom(z){acgFsZoom=Math.max(1,Math.min(8,z));if(acgFsZoom===1){acgFsPanX=0;acgFsPanY=0;}acgApplyTransform();}
+function acgClampPan(){
+  // with transform-origin 0 0: the scaled map is (zoom * stageW) wide. keep it covering the stage.
+  const stage=$("acg-fs-stage");if(!stage)return;
+  const w=stage.clientWidth,h=stage.clientHeight;
+  const minX=w-w*acgFsZoom, minY=h-h*acgFsZoom; // most-negative allowed (right/bottom edge flush)
+  acgFsPanX=Math.min(0,Math.max(minX,acgFsPanX));
+  acgFsPanY=Math.min(0,Math.max(minY,acgFsPanY));
+}
+function acgApplyTransform(){
+  const svg=$("acg-fs-map");if(!svg)return;
+  acgClampPan();
+  svg.style.transform=`translate(${acgFsPanX}px,${acgFsPanY}px) scale(${acgFsZoom})`;
+  const lab=$("acg-zlabel");if(lab)lab.textContent=acgFsZoom.toFixed(1)+"×";
+}
+function acgSetZoom(z,ox,oy){
+  const stage=$("acg-fs-stage");
+  const newZ=Math.max(1,Math.min(8,z));
+  if(stage){
+    // zoom toward a focal point (defaults to stage center) so it feels natural
+    const w=stage.clientWidth,h=stage.clientHeight;
+    const fx=(ox==null?w/2:ox),fy=(oy==null?h/2:oy);
+    // keep the focal point stationary on screen as scale changes
+    const ratio=newZ/acgFsZoom;
+    acgFsPanX=fx-(fx-acgFsPanX)*ratio;
+    acgFsPanY=fy-(fy-acgFsPanY)*ratio;
+  }
+  acgFsZoom=newZ;
+  if(acgFsZoom<=1.0001){acgFsZoom=1;acgFsPanX=0;acgFsPanY=0;}
+  acgApplyTransform();
+}
+function acgResetZoom(){acgFsZoom=1;acgFsPanX=0;acgFsPanY=0;acgApplyTransform();}
 function acgRenderFsMap(){
   const svg=$("acg-fs-map");if(!svg)return;svg.innerHTML=acgBuildSvg(true);
   const tip=$("acg-fs-tip"),stage=$("acg-fs-stage");
@@ -1192,8 +1264,10 @@ function openAcgFullscreen(){
   if(!acgGenerated)return;
   const fs=$("acg-fs");fs.classList.remove("hide");fs.setAttribute("aria-hidden","false");
   $("acg-fs-name").textContent=profile&&profile.name?profile.name+"'s":"Your";
-  acgFsZoom=1;acgFsPanX=0;acgFsPanY=0;acgRenderFsMap();acgApplyTransform();acgRefreshFsFilter();
   document.body.style.overflow="hidden";
+  // render first, then reset zoom on the next frame once the stage has real dimensions
+  acgRenderFsMap();acgRefreshFsFilter();
+  requestAnimationFrame(()=>{acgResetZoom();});
 }
 function closeAcgFullscreen(){
   acgStopPlay();const fs=$("acg-fs");fs.classList.add("hide");fs.setAttribute("aria-hidden","true");
@@ -1206,16 +1280,24 @@ function closeAcgFullscreen(){
 }
 function wireAcgFsGestures(){
   const stage=$("acg-fs-stage");if(!stage||stage.dataset.wired)return;stage.dataset.wired="1";
-  let dragging=false,lastX=0,lastY=0,pinchDist=0,pinchZoom0=1;
+  let dragging=false,lastX=0,lastY=0,pinchDist=0,pinchZoom0=1,pinchMidX=0,pinchMidY=0,moved=false;
   const dist=(a,b)=>Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
-  stage.addEventListener("touchstart",e=>{if(e.touches.length===1){dragging=true;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;}else if(e.touches.length===2){dragging=false;pinchDist=dist(e.touches[0],e.touches[1]);pinchZoom0=acgFsZoom;}},{passive:true});
-  stage.addEventListener("touchmove",e=>{if(e.touches.length===2){const d=dist(e.touches[0],e.touches[1]);if(pinchDist>0)acgSetZoom(pinchZoom0*d/pinchDist);e.preventDefault();}else if(dragging&&e.touches.length===1&&acgFsZoom>1){acgFsPanX+=e.touches[0].clientX-lastX;acgFsPanY+=e.touches[0].clientY-lastY;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;acgApplyTransform();e.preventDefault();}},{passive:false});
+  const rel=(cx,cy)=>{const r=stage.getBoundingClientRect();return[cx-r.left,cy-r.top];};
+  stage.addEventListener("touchstart",e=>{
+    if(e.touches.length===1){dragging=true;moved=false;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;}
+    else if(e.touches.length===2){dragging=false;pinchDist=dist(e.touches[0],e.touches[1]);pinchZoom0=acgFsZoom;
+      const mx=(e.touches[0].clientX+e.touches[1].clientX)/2,my=(e.touches[0].clientY+e.touches[1].clientY)/2;[pinchMidX,pinchMidY]=rel(mx,my);}
+  },{passive:true});
+  stage.addEventListener("touchmove",e=>{
+    if(e.touches.length===2){const d=dist(e.touches[0],e.touches[1]);if(pinchDist>0)acgSetZoom(pinchZoom0*d/pinchDist,pinchMidX,pinchMidY);e.preventDefault();}
+    else if(dragging&&e.touches.length===1&&acgFsZoom>1){const dx=e.touches[0].clientX-lastX,dy=e.touches[0].clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;acgFsPanX+=dx;acgFsPanY+=dy;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;acgApplyTransform();e.preventDefault();}
+  },{passive:false});
   stage.addEventListener("touchend",()=>{dragging=false;pinchDist=0;});
-  stage.addEventListener("mousedown",e=>{if(acgFsZoom>1){dragging=true;lastX=e.clientX;lastY=e.clientY;e.preventDefault();}});
-  window.addEventListener("mousemove",e=>{if(dragging){acgFsPanX+=e.clientX-lastX;acgFsPanY+=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;acgApplyTransform();}});
+  stage.addEventListener("mousedown",e=>{if(acgFsZoom>1){dragging=true;moved=false;lastX=e.clientX;lastY=e.clientY;e.preventDefault();}});
+  window.addEventListener("mousemove",e=>{if(dragging){const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;acgFsPanX+=dx;acgFsPanY+=dy;lastX=e.clientX;lastY=e.clientY;acgApplyTransform();}});
   window.addEventListener("mouseup",()=>{dragging=false;});
-  stage.addEventListener("wheel",e=>{e.preventDefault();acgSetZoom(acgFsZoom*(e.deltaY<0?1.12:0.89));},{passive:false});
-  stage.addEventListener("click",e=>{if(e.target.tagName!=="path"&&e.target.tagName!=="circle"){$("acg-fs-tip").classList.add("hide");$("acg-fs-map").querySelectorAll(".acg-line").forEach(l=>l.classList.remove("hot"));}});
+  stage.addEventListener("wheel",e=>{e.preventDefault();const[ox,oy]=rel(e.clientX,e.clientY);acgSetZoom(acgFsZoom*(e.deltaY<0?1.12:0.89),ox,oy);},{passive:false});
+  stage.addEventListener("click",e=>{if(moved){moved=false;return;}if(e.target.tagName!=="path"&&e.target.tagName!=="circle"){$("acg-fs-tip").classList.add("hide");$("acg-fs-map").querySelectorAll(".acg-line").forEach(l=>l.classList.remove("hot"));}});
 }
 
 /* ===== ENTRY: explanation first, map on demand ===== */
@@ -1226,18 +1308,22 @@ function renderAtlasLegend(){
 function renderAtlas(){
   if(!profile)return;
   renderAtlasLegend();
-  // reset the generate card / results when the profile changes
-  if(_acgBuiltForId!==activeId){
-    acgGenerated=false;acgFilter="all";acgOffsetSec=0;
-    const res=$("acg-results");if(res)res.classList.add("hide");
-    const gt=$("acg-gen-title");if(gt)gt.textContent="See your lines on the map";
-    const gb=$("acg-generate");if(gb){gb.textContent="Generate my map";gb.disabled=false;}
-  }
   // birth-time note on the generate card
   const sub=$("acg-gen-sub");
   if(sub){sub.innerHTML=profile.time?"We'll plot all forty of your lines onto a world map using your exact birth moment, then read the strongest ones for you.":'<span style="color:var(--rose,#d98a9e)">No birth time set</span> — lines will use noon and can shift up to 15° per hour. Add your birth time in your profile for accurate lines.';}
+  // chart-ready? then just show the map straight away (no need to re-click each visit)
+  const chartReady=profile.date&&profile.lat!=null;
+  if(chartReady&&window.Astronomy){
+    // (re)generate for this profile; cheap, and guarantees the map is present
+    generateAtlasMap(true);
+  }else{
+    // not enough birth data — show the generate card prompt, hide results
+    acgGenerated=false;
+    const res=$("acg-results");if(res)res.classList.add("hide");
+    const gt=$("acg-gen-title");if(gt)gt.textContent="See your lines on the map";
+  }
 }
-function generateAtlasMap(){
+function generateAtlasMap(auto){
   if(!profile||!window.Astronomy)return;
   if(!cachedNatal||_cacheProfileId!==profile.id)computeChartData();
   acgBirthMs=buildBirthDate(profile).getTime();
@@ -1245,11 +1331,15 @@ function generateAtlasMap(){
   computeAcgLines();
   _acgBuiltForId=activeId;acgGenerated=true;
   $("acg-results").classList.remove("hide");
-  renderAcgMap();
-  renderAcgFilterInto("acg-filter",()=>{renderAcgMap();renderAcgReadings();});
-  renderAcgReadings();
-  const gt=$("acg-gen-title");if(gt)gt.textContent="✓ Map generated below";
-  $("acg-results").scrollIntoView?$("acg-results").scrollIntoView({behavior:"smooth",block:"start"}):null;
+  // defer to next frame so the now-visible container has real dimensions before drawing
+  requestAnimationFrame(()=>{
+    renderAcgMap();
+    renderAcgFilterInto("acg-filter",acgApplyFilter);
+    renderAcgReadings();
+  });
+  const gt=$("acg-gen-title");if(gt)gt.textContent="✓ Your map";
+  const gb=$("acg-generate");if(gb)gb.textContent="↻ Regenerate";
+  if(!auto&&$("acg-results").scrollIntoView)$("acg-results").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 function progressedDate(p){
@@ -1261,7 +1351,7 @@ function progressedDate(p){
 function computeProgressed(p){
   return computeChart(progressedDate(p));
 }
-function drawTriWheel(svgId,natal,angles,prog,transit){
+function drawTriWheel(svgId,natal,angles,prog,transit,liveNow){
   const svg=$(svgId);if(!svg)return;
   const cx=200,cy=200,rO=192,rZ=164,rNat=146,rProg=116,rTrans=86,rHub=70;
   const ascLon=angles?angles.asc:0;
@@ -1275,10 +1365,23 @@ function drawTriWheel(svgId,natal,angles,prog,transit){
     const[gx,gy]=pt((rZ+rO)/2,a+15);
     s+=`<text x="${gx}" y="${gy+5}" text-anchor="middle" font-size="13" fill="#e8c97a">${SIGN_GLYPH[i]}</text>`;
   }
-  // angle axes
+  // angle markers: short ticks at the rim + labelled degrees (full cross-lines clutter the 3 rings)
   if(angles){
-    const[ax,ay]=pt(rZ,angles.asc),[ex,ey]=pt(rZ,norm360(angles.asc+180));s+=`<line x1="${ax}" y1="${ay}" x2="${ex}" y2="${ey}" stroke="#7fc8c4" stroke-width="1.2" opacity=".6"/>`;
-    const[mx,my]=pt(rZ,angles.mc),[ix,iy]=pt(rZ,norm360(angles.mc+180));s+=`<line x1="${mx}" y1="${my}" x2="${ix}" y2="${iy}" stroke="#e8c97a" stroke-width="1.2" opacity=".6"/>`;
+    const degTxt=(lon)=>{const sf=signFromLon(lon);return `${Math.floor(sf.degInSign)}° ${sf.sign.slice(0,3)}`;};
+    const markAngle=(lon,col,name)=>{
+      // tick from just outside the zodiac ring inward a little
+      const[x1,y1]=pt(rZ-6,lon),[x2,y2]=pt(rO,lon);
+      let out=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="2" opacity=".9"/>`;
+      // label sits just outside the outer ring
+      const[lx,ly]=pt(rO+12,lon);
+      out+=`<text x="${lx}" y="${ly+3}" text-anchor="middle" font-size="9" font-weight="700" fill="${col}" font-family="SF Mono,monospace">${name}</text>`;
+      const[dx,dy]=pt(rO+22,lon);
+      out+=`<text x="${dx}" y="${dy+3}" text-anchor="middle" font-size="7.5" fill="${col}" opacity=".85" font-family="SF Mono,monospace">${degTxt(lon)}</text>`;
+      return out;
+    };
+    // Ascendant (teal) and Midheaven (gold) — the two angles that matter most, each shown as a degree
+    s+=markAngle(angles.asc,"#7fc8c4","AC");
+    s+=markAngle(angles.mc,"#e8c97a","MC");
   }
   // helper to place a ring of planets
   const ring=(chart,r,color,cls,degR)=>{
@@ -1301,7 +1404,31 @@ function drawTriWheel(svgId,natal,angles,prog,transit){
   ring(natal,rNat,"#e8e8f0","tw-nat",rNat-13);
   ring(prog,rProg,"#7fc8c4","tw-prog",rProg-13);
   ring(transit,rTrans,"#d98a9e","tw-trans",rTrans-13);
+  // live clock in the hub — the exact moment these transit positions are computed for
+  if(liveNow){
+    const hh=String(liveNow.getHours()).padStart(2,"0"),mm=String(liveNow.getMinutes()).padStart(2,"0"),ss=String(liveNow.getSeconds()).padStart(2,"0");
+    s+=`<text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="9" fill="#d98a9e" opacity=".8" font-family="SF Mono,monospace" letter-spacing="1">NOW</text>`;
+    s+=`<text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="17" fill="#fff" font-family="SF Mono,monospace" letter-spacing="1">${hh}:${mm}:${ss}</text>`;
+    s+=`<text x="${cx}" y="${cy+27}" text-anchor="middle" font-size="7.5" fill="#8b95b8" font-family="SF Mono,monospace">live · transits moving</text>`;
+  }
   svg.innerHTML=s;
+}
+/* ---- live tri-wheel: re-plot the transit ring every second so each planet moves at its own real rate ---- */
+let triWheelTimer=null,_triNatal=null,_triAngles=null,_triProg=null;
+function stopTriWheelLive(){if(triWheelTimer){clearInterval(triWheelTimer);triWheelTimer=null;}}
+function startTriWheelLive(natal,angles,prog){
+  stopTriWheelLive();
+  _triNatal=natal;_triAngles=angles;_triProg=prog;
+  const tick=()=>{
+    // only redraw while the tri-wheel is actually on screen
+    const sec=$("triwheel-section");
+    if(!sec||sec.classList.contains("hide")||!document.body.contains($("tri-wheel"))){stopTriWheelLive();return;}
+    const now=new Date();
+    let transit;try{transit=computeChart(now);}catch(e){return;}
+    drawTriWheel("tri-wheel",_triNatal,_triAngles,_triProg,transit,now);
+  };
+  tick();
+  triWheelTimer=setInterval(tick,1000);
 }
 function computeChartData(){
   cachedNatal=computeChart(buildBirthDate(profile));
@@ -1316,6 +1443,7 @@ function natalSummaryHtml(){
   return summ;
 }
 function showNatal(){
+  stopTriWheelLive();
   $("onboard").classList.add("hide");$("dash").classList.add("hide");$("natal").classList.remove("hide");
   if(!window.Astronomy){$("natal-reading").innerHTML=`<div class="err">Couldn't load the ephemeris library. Reload to try again.</div>`;return;}
   computeChartData();
@@ -1396,13 +1524,15 @@ function openProfileMenu(){
   list.querySelectorAll(".pm-row").forEach(el=>el.addEventListener("click",e=>{
     if(e.target.dataset.edit){e.stopPropagation();const id=e.target.dataset.edit;const p=profiles.find(x=>x.id===id);const nn=prompt("Rename this chart:",p.name||"");if(nn!==null){p.name=nn.trim();persistProfiles();openProfileMenu();renderProfileCorners();if(id===activeId&&$("natal-hello"))$("natal-hello").textContent=p.name?`Welcome, ${p.name}`:"Welcome";}return;}
     if(e.target.dataset.del){e.stopPropagation();const id=e.target.dataset.del;if(confirm("Remove this chart?")){deleteProfile(id);if(profile)openProfileMenu();else{closeProfileMenu();startNewProfile();}renderProfileCorners();}return;}
-    const id=el.dataset.pid;closeProfileMenu();if(id!==activeId)switchProfile(id);else showNatal();
+    const id=el.dataset.pid;closeProfileMenu();
+    if(id!==activeId){switchProfile(id);}
+    else{const onDash=$("dash")&&!$("dash").classList.contains("hide");if(!onDash)showNatal();}
   }));
   $("pmenu").classList.remove("hide");
 }
 function closeProfileMenu(){$("pmenu").classList.add("hide");}
-function showDash(){$("onboard").classList.add("hide");$("natal").classList.add("hide");$("dash").classList.remove("hide");monthRendered=false;dayOffset=0;renderDash();}
-function showOnboard(){$("dash").classList.add("hide");$("natal").classList.add("hide");$("onboard").classList.remove("hide");populateDateTime();
+function showDash(){stopTriWheelLive();$("onboard").classList.add("hide");$("natal").classList.add("hide");$("dash").classList.remove("hide");monthRendered=false;dayOffset=0;renderDash();}
+function showOnboard(){stopTriWheelLive();$("dash").classList.add("hide");$("natal").classList.add("hide");$("onboard").classList.remove("hide");populateDateTime();
   // show the back bar only if the user already has at least one saved chart (i.e. not first-run)
   if(profiles.length>0){$("onboard-topbar").classList.remove("hide");}else{$("onboard-topbar").classList.add("hide");}
   if(profile){$("i-name").value=profile.name||"";setDateTime(profile.date||"",profile.time||"");if(profile.placeName){$("i-place").value=profile.placeName;chosenPlace={name:profile.placeName,lat:profile.lat,lng:profile.lng,tz:profile.tz,tzOffset:profile.tzOffset};$("place-set").textContent=`✓ ${profile.lat.toFixed(2)}, ${profile.lng.toFixed(2)} · ${profile.tz||"UTC"}`;$("place-set").classList.remove("hide");}}}
@@ -2073,7 +2203,9 @@ function renderTriWheel(){
     const anglesForTri=(cachedAngles&&_cacheProfileId===tp.id)?cachedAngles:((tp.time&&tp.lat!=null)?computeAngles(buildBirthDate(tp),tp.lat,tp.lng):null);
     const prog=computeProgressed(tp);
     const transit=computeChart(new Date());
-    drawTriWheel("tri-wheel",natalForTri,anglesForTri,prog,transit);
+    drawTriWheel("tri-wheel",natalForTri,anglesForTri,prog,transit,new Date());
+    // start the live second-by-second transit motion (planets each move at their own rate)
+    startTriWheelLive(natalForTri,anglesForTri,prog);
     const pSun=signFromLon(prog.Sun),pMoon=signFromLon(prog.Moon),nSun=signFromLon(natalForTri.Sun);
     const pMerc=signFromLon(prog.Mercury),pVen=signFromLon(prog.Venus),pMars=signFromLon(prog.Mars);
     const birth=buildBirthDate(tp);const age=Math.floor((new Date()-birth)/(365.25*24*3600*1000));
@@ -2130,9 +2262,19 @@ function renderLifetimeLuck(){
       const isConj=d<2, isTrine=Math.abs(d-120)<2;
       if(isConj||isTrine){
         const key=name+(isConj?"-conj":"-trine");
-        if(!found.some(f=>f.key===key&&Math.abs(f.date-t)<120*86400000)){
+        // A real Jupiter return repeats only every ~11.9 years. As Jupiter nears the exact
+        // degree it can station and retrograde, crossing the orb up to 3 times within a few
+        // months — those are the SAME return, not separate ones. Merge anything within ~3 years
+        // for conjunctions (well under the 12-yr cycle) so each return is counted once.
+        // Trines recur more often, so keep a tighter merge window for them.
+        const mergeMs=(isConj?1100:160)*86400000;
+        const dup=found.find(f=>f.key===key&&Math.abs(f.date-t)<mergeMs);
+        if(!dup){
           const age=Math.floor((t-birth)/(365.25*86400000));
-          found.push({key,name,date:new Date(t),age,aspect:isConj?"meets":"harmonizes with",desc});
+          found.push({key,name,date:new Date(t),age,aspect:isConj?"meets":"harmonizes with",desc,_minD:d});
+        }else if(d<dup._minD){
+          // keep the tightest (closest-to-exact) crossing as the representative date for this return
+          dup.date=new Date(t);dup.age=Math.floor((t-birth)/(365.25*86400000));dup._minD=d;
         }
       }
     }
@@ -2304,10 +2446,20 @@ function tarotDrawnKey(date){return `stellar.tarot.${activeId||"x"}.${date.toISO
 function renderTarot(){
   const date=viewedDate();
   const card=tarotForDay(date,activeId);
-  const drawn=(()=>{try{return localStorage.getItem(tarotDrawnKey(date))==="1";}catch(e){return false;}})();
   const box=$("tarot-box");if(!box)return;
-  if(drawn||dayOffset!==0){
-    // already revealed (or a past/future day — show it directly)
+  // future days: locked — you can't peek at a card before its day arrives
+  if(dayOffset>0){
+    box.innerHTML=`<div class="tarot-locked"><div class="tarot-lock-glyph">🔒</div><div class="tarot-lock-t">Your card for this day isn't here yet</div><div class="tarot-lock-s">Come back on the day to turn it over. The future stays hidden until you reach it.</div></div>`;
+    return;
+  }
+  // past days: show the card directly, already turned over (you can always look back)
+  if(dayOffset<0){
+    box.innerHTML=tarotCardHtml(card);
+    return;
+  }
+  // today (offset 0): tap to reveal, then remember it's been drawn
+  const drawn=(()=>{try{return localStorage.getItem(tarotDrawnKey(date))==="1";}catch(e){return false;}})();
+  if(drawn){
     box.innerHTML=tarotCardHtml(card);
   }else{
     box.innerHTML=`<button class="tarot-draw" id="tarot-draw-btn"><span class="tarot-back">✦</span><span class="tarot-cta">Reveal today's card</span></button>`;
@@ -2864,7 +3016,7 @@ document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{con
   var fx=$("acg-fs-close");if(fx){fx.addEventListener("click",closeAcgFullscreen);fx.addEventListener("touchend",function(e){e.preventDefault();closeAcgFullscreen();});}
   var zi=$("acg-zoom-in");if(zi)zi.addEventListener("click",function(){acgSetZoom(acgFsZoom*1.4);});
   var zo=$("acg-zoom-out");if(zo)zo.addEventListener("click",function(){acgSetZoom(acgFsZoom/1.4);});
-  var zr=$("acg-zoom-reset");if(zr)zr.addEventListener("click",function(){acgSetZoom(1);});
+  var zr=$("acg-zoom-reset");if(zr)zr.addEventListener("click",function(){acgResetZoom();});
   wireAcgFsGestures();
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("acg-fs").classList.contains("hide"))closeAcgFullscreen();});
 })();
