@@ -277,7 +277,7 @@
     </header>
     <div class="card">
       <div class="label">Your natal chart</div>
-      <div class="wheelwrap"><svg class="wheel" id="natal-wheel" viewBox="0 0 400 400"></svg></div>
+      <div class="wheelwrap"><svg class="wheel" id="natal-wheel" viewBox="-34 -34 468 468"></svg></div>
       <div id="natal-summary2" class="dim" style="font-size:13px;text-align:center"></div>
     </div>
     <div class="card">
@@ -448,7 +448,7 @@
       <!-- today's sky chart, first -->
       <div class="between"><span class="label">The sky right now</span></div>
       <div class="card">
-        <div class="wheelwrap"><svg class="wheel" id="now-wheel" viewBox="0 0 400 400"></svg></div>
+        <div class="wheelwrap"><svg class="wheel" id="now-wheel" viewBox="-34 -34 468 468"></svg></div>
         <div id="now-summary" class="dim" style="font-size:13px;text-align:center"></div>
         <div id="now-loc" style="text-align:center;margin-top:10px">
           <button class="linkbtn" id="now-detect" style="color:var(--teal)">📍 use my location</button>
@@ -794,6 +794,13 @@ function drawWheelInto(svgId,natal,angles){
       if(lbl==="AC"||lbl==="MC"){const[ex,ey]=pt(rZ,norm360(lon+180));s+=`<line x1="${ax}" y1="${ay}" x2="${ex}" y2="${ey}" stroke="${col}" stroke-width="1.5"/>`;}
       const[tx,ty]=pt(rH-12,lon);
       s+=`<text x="${tx}" y="${ty+4}" text-anchor="middle" font-size="12" font-family="SF Mono,monospace" fill="${col}" font-weight="700">${lbl}</text>`;
+      // AC and MC also get their exact degree written right next to them, on the wheel
+      if(lbl==="AC"||lbl==="MC"){
+        const sf=signFromLon(lon);const dm=Math.floor((sf.degInSign%1)*60);
+        const degStr=`${Math.floor(sf.degInSign)}°${String(dm).padStart(2,"0")}′ ${sf.sign.slice(0,3)}`;
+        const[dgx,dgy]=pt(rO+12,lon);
+        s+=`<text x="${dgx}" y="${dgy+3}" text-anchor="middle" font-size="8.5" font-family="SF Mono,monospace" fill="${col}" font-weight="700">${degStr}</text>`;
+      }
     });
   }
   // natal aspect lines (the colored web), drawn from a tidy inner ring
@@ -1552,17 +1559,9 @@ function renderDash(){
     // retrograde check: compare position a day later
     let rx="";try{const tomorrow=new Date(now.getTime()+86400000);const lon2=eclipticLon(p.key,tomorrow);let d=lon2-cachedTransit[p.key];if(d>180)d-=360;if(d<-180)d+=360;if(d<0&&p.key!=="Moon")rx=' <span class="rx">℞</span>';}catch(e){}
     return `<span class="chip">${p.glyph} <b>${p.key}</b> ${deg}°${String(min).padStart(2,"0")}′ ${s.sign}${rx}</span>`;}).join("");
-  // natal chart angles: Ascendant + Midheaven degrees (need birth time + place)
+  // (Ascendant + Midheaven are now shown directly on the chart wheels, not as chips here)
   const angBox=$("angle-chips");
-  if(angBox){
-    if(cachedAngles){
-      const fmt=(lon)=>{const s=signFromLon(lon);const d=Math.floor(s.degInSign);const m=Math.floor((s.degInSign-d)*60);return `${d}°${String(m).padStart(2,"0")}′ ${s.sign}`;};
-      angBox.innerHTML=`<span class="chip angle-chip">⬆ <b>Ascendant</b> ${fmt(cachedAngles.asc)}</span><span class="chip angle-chip">⟂ <b>Midheaven</b> ${fmt(cachedAngles.mc)}</span>`;
-      angBox.classList.remove("hide");
-    }else{
-      angBox.innerHTML=`<span class="chip angle-chip dim-chip">Add birth time &amp; place for your Ascendant &amp; Midheaven</span>`;
-    }
-  }
+  if(angBox){angBox.innerHTML="";angBox.classList.add("hide");}
   cachedEvents=notableEvents(now);
   renderEvents(cachedEvents);
   renderRelateToday(cachedTransit);
@@ -1606,14 +1605,21 @@ function renderSkyNow(){
   const isToday=dayOffset===0;
   const when=isToday?new Date():(()=>{const d=viewedDate();d.setHours(12,0,0,0);return d;})();
   const sky=computeChart(when);
-  let angles=null;
-  if(nowLoc&&nowLoc.lat!=null){angles=computeAngles(when,nowLoc.lat,nowLoc.lng);}
+  // angles need a location. prefer a location the user set for "sky now"; otherwise fall back
+  // to their birth location so today's Midheaven + Ascendant still compute and show on the wheel.
+  let angles=null,locUsed=null;
+  if(nowLoc&&nowLoc.lat!=null){angles=computeAngles(when,nowLoc.lat,nowLoc.lng);locUsed=nowLoc.name||null;}
+  else if(profile&&profile.lat!=null){angles=computeAngles(when,profile.lat,profile.lng);locUsed=profile.placeName||null;}
   drawWheelInto("now-wheel",sky,angles);
   const sun=signFromLon(sky.Sun),moon=signFromLon(sky.Moon);
+  const fmtDM=(lon)=>{const sf=signFromLon(lon);const dm=Math.floor((sf.degInSign%1)*60);return `${Math.floor(sf.degInSign)}°${String(dm).padStart(2,"0")}′ ${sf.sign}`;};
   let summ=`Sun ${sun.degInSign.toFixed(0)}° ${sun.sign} · Moon ${moon.degInSign.toFixed(0)}° ${moon.sign}`;
-  if(angles&&isToday){const asc=signFromLon(angles.asc);summ+=`<br>${asc.sign} rising right now${nowLoc.name?" in "+nowLoc.name:""}`;}
-  else if(angles){const asc=signFromLon(angles.asc);summ+=`<br>${asc.sign} rising at noon${nowLoc.name?" in "+nowLoc.name:""}`;}
-  else{summ+=`<br><span style="opacity:.7">set your location to see what's rising</span>`;}
+  if(angles){
+    const whenWord=isToday?"right now":"at noon";
+    summ+=`<br><span style="color:#7fc8c4">Ascendant</span> ${fmtDM(angles.asc)} · <span style="color:#e8c97a">Midheaven</span> ${fmtDM(angles.mc)} <span style="opacity:.65">(${whenWord}${locUsed?" · "+locUsed:""})</span>`;
+  }else{
+    summ+=`<br><span style="opacity:.7">add a birth place to see the Ascendant &amp; Midheaven</span>`;
+  }
   $("now-summary").innerHTML=summ;
 }
 
