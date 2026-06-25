@@ -43,9 +43,11 @@
   .place-set{font-size:13px;color:var(--teal);margin-top:6px;font-family:"SF Mono",monospace}
   .ac-status{font-size:13px;color:var(--dim);margin-top:6px;font-family:"SF Mono",monospace}
   .ac-status.warn{color:var(--rose)}
-  .wheelwrap{display:flex;justify-content:center;padding:6px 0 2px}
-  svg.wheel{width:min(420px,86vw);height:auto;display:block}
-  .gline{stroke:var(--line);fill:none}.gtick{stroke:rgba(180,196,255,.25)}.glyph{font-family:"SF Mono",monospace;fill:var(--star)}
+  .wheelwrap{display:flex;justify-content:center;padding:10px 0 4px}
+  svg.wheel{width:min(560px,96vw);height:auto;display:block}
+  .gline{stroke:rgba(190,205,255,.30);fill:none}.gtick{stroke:rgba(200,212,255,.42)}.glyph{font-family:"SF Mono",monospace;fill:#fbf9ff}
+  /* lighter panel behind each chart wheel so the dim navy lines read clearly */
+  .wheel-panel{background:radial-gradient(circle at 50% 42%,#1c2540 0%,#141b30 62%,#0e1424 100%);border:1px solid rgba(190,205,255,.18);border-radius:20px;padding:8px;margin:2px 0}
   .reading{font-size:17px;line-height:1.7}.reading p{margin:0 0 14px}.reading p:last-child{margin-bottom:0}
   .reading .lead{font-size:19px;font-style:italic;color:#fff}
   .skyrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
@@ -94,11 +96,19 @@
   .pm-edit{color:var(--teal);background:none;border:none;cursor:pointer;font-size:12px;opacity:.6;padding:4px 8px}
   .pm-edit:hover{opacity:1}
   .datehead{display:flex;align-items:center;gap:10px}
-  .day-nav{background:#141b30;border:1px solid var(--gold-soft);color:var(--gold);width:42px;height:42px;border-radius:50%;font-size:24px;line-height:1;cursor:pointer;flex:0 0 42px;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:all .15s}
-  .day-nav:hover{background:var(--gold);color:#1a1206;transform:scale(1.05)}
-  .day-nav:active{transform:scale(.95)}
-  .day-nav:hover{border-color:var(--gold)}
-  .day-nav.disabled{opacity:.3;pointer-events:none}
+  .timehead{margin:2px 0 16px;text-align:center}
+  .time-display{margin-bottom:12px}
+  .time-clock{font-family:'SF Mono',ui-monospace,monospace;font-size:30px;font-weight:700;color:var(--gold);letter-spacing:1px;margin:2px 0;line-height:1.1}
+  .time-controls{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .time-now{background:#141b30;border:1px solid var(--teal);color:var(--teal);padding:8px 20px;border-radius:22px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+  .time-now:hover{background:var(--teal);color:#06211f;transform:scale(1.03)}
+  .time-now:active{transform:scale(.97)}
+  .time-now.live{border-color:var(--teal);box-shadow:0 0 0 3px rgba(127,200,196,.12)}
+  .time-steppers{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .time-step-group{display:flex;gap:5px;background:#10162a;border:1px solid var(--gold-soft);border-radius:12px;padding:4px}
+  .time-step{background:transparent;border:none;color:var(--gold);min-width:46px;padding:8px 10px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:'SF Mono',ui-monospace,monospace;transition:all .12s}
+  .time-step:hover{background:var(--gold);color:#1a1206}
+  .time-step:active{transform:scale(.94)}
   #journal-text{width:100%;background:#0c1120;border:1px solid var(--line);border-radius:12px;color:var(--star);font:inherit;font-size:15px;line-height:1.5;padding:12px;resize:vertical;outline:none;box-sizing:border-box}
   #journal-text:focus{border-color:var(--gold)}
   .tarot-draw{position:relative;width:100%;background:linear-gradient(160deg,#1a1f38,#0c1020);border:1px solid var(--gold-soft);border-radius:16px;padding:30px 16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;overflow:hidden;transition:transform .2s}
@@ -277,7 +287,7 @@
     </header>
     <div class="card">
       <div class="label">Your natal chart</div>
-      <div class="wheelwrap"><svg class="wheel" id="natal-wheel" viewBox="-34 -34 468 468"></svg></div>
+      <div class="wheelwrap wheel-panel"><svg class="wheel" id="natal-wheel" viewBox="-34 -34 468 468"></svg></div>
       <div id="natal-summary2" class="dim" style="font-size:13px;text-align:center"></div>
     </div>
     <div class="card">
@@ -300,8 +310,8 @@
     <div id="triwheel-section" class="hide">
       <div class="between"><span class="label">Who you're becoming</span></div>
       <div class="card">
-        <p class="dim" style="font-size:13px;margin-bottom:6px">Three charts in one: your <span style="color:#e8e8f0">natal</span> self (birth), your <span style="color:#7fc8c4">progressed</span> self (who you've grown into), and the <span style="color:#d98a9e">transits</span> ticking live right now — watch the outer rose planets drift against your chart, each at its own speed (the Moon moves fastest, Pluto barely at all).</p>
-        <div class="wheelwrap"><svg class="wheel" id="tri-wheel" viewBox="-30 -30 460 460"></svg></div>
+        <p class="dim" style="font-size:13px;margin-bottom:6px">Three charts in one: your <span style="color:#e8e8f0">natal</span> self (birth), your <span style="color:#7fc8c4">progressed</span> self (who you've grown into), and today's <span style="color:#d98a9e">transits</span> (where the planets are now).</p>
+        <div class="wheelwrap wheel-panel"><svg class="wheel" id="tri-wheel" viewBox="-30 -30 460 460"></svg></div>
         <div class="trilegend"><span class="tl-nat">● natal</span><span class="tl-prog">● progressed</span><span class="tl-trans">● transits</span></div>
         <div id="prog-body" style="margin-top:16px"></div>
       </div>
@@ -432,10 +442,28 @@
   <section id="dash" class="hide">
     <div class="topbar"><div class="mark" style="margin:0">✦ Stellar</div>
       <div class="topbar-right"><button class="linkbtn" id="view-chart">view full chart</button><button class="pcorner" id="pcorner-dash"></button></div></div>
-    <div class="datehead" id="datehead">
-      <button class="day-nav" id="day-prev" aria-label="Previous day">‹</button>
-      <div style="flex:1"><div class="label" id="greeting">Good morning</div><div class="d" id="today-date"></div><div class="dim" id="dash-profile-name" style="font-size:13px;margin-top:2px"></div><div class="dim daynav-hint" style="font-size:11px;margin-top:3px;opacity:.55">use ‹ › or arrow keys to change day</div></div>
-      <button class="day-nav" id="day-next" aria-label="Next day">›</button>
+    <div class="timehead" id="timehead">
+      <div class="time-display">
+        <div class="label" id="greeting">Good morning</div>
+        <div class="time-clock" id="time-clock">—</div>
+        <div class="d" id="today-date"></div>
+        <div class="dim" id="dash-profile-name" style="font-size:13px;margin-top:2px"></div>
+      </div>
+      <div class="time-controls">
+        <button class="time-now" id="time-now">↻ Now</button>
+        <div class="time-steppers">
+          <div class="time-step-group">
+            <button class="time-step" data-step="-1440" aria-label="back one day">−1d</button>
+            <button class="time-step" data-step="-60" aria-label="back one hour">−1h</button>
+            <button class="time-step" data-step="-4" aria-label="back four minutes">−4m</button>
+          </div>
+          <div class="time-step-group">
+            <button class="time-step" data-step="4" aria-label="forward four minutes">+4m</button>
+            <button class="time-step" data-step="60" aria-label="forward one hour">+1h</button>
+            <button class="time-step" data-step="1440" aria-label="forward one day">+1d</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="tabs">
       <button class="tab active" data-view="today">Today</button>
@@ -448,7 +476,7 @@
       <!-- today's sky chart, first -->
       <div class="between"><span class="label">The sky right now</span></div>
       <div class="card">
-        <div class="wheelwrap"><svg class="wheel" id="now-wheel" viewBox="-34 -34 468 468"></svg></div>
+        <div class="wheelwrap wheel-panel"><svg class="wheel" id="now-wheel" viewBox="-34 -34 468 468"></svg></div>
         <div id="now-summary" class="dim" style="font-size:13px;text-align:center"></div>
         <div id="now-loc" style="text-align:center;margin-top:10px">
           <button class="linkbtn" id="now-detect" style="color:var(--teal)">📍 use my location</button>
@@ -776,7 +804,7 @@ function drawWheelInto(svgId,natal,angles){
     const a=i*30;const[x1,y1]=pt(rZ,a),[x2,y2]=pt(rO,a);
     s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="gtick"/>`;
     const[gx,gy]=pt((rZ+rO)/2,a+15);
-    s+=`<text x="${gx}" y="${gy+5}" text-anchor="middle" font-size="14" class="glyph" fill="#e8c97a">${SIGN_GLYPH[i]}</text>`;
+    s+=`<text x="${gx}" y="${gy+5}" text-anchor="middle" font-size="17" class="glyph" fill="#e8c97a">${SIGN_GLYPH[i]}</text>`;
   }
   // house cusp spokes: true Placidus cusps if available, else equal from Ascendant
   const cusps=(angles&&angles.cusps)?angles.cusps:Array.from({length:12},(_,k)=>norm360(ascLon+k*30));
@@ -793,13 +821,13 @@ function drawWheelInto(svgId,natal,angles){
       // draw each axis as a full line edge-to-edge once (AC-DC together, MC-IC together)
       if(lbl==="AC"||lbl==="MC"){const[ex,ey]=pt(rZ,norm360(lon+180));s+=`<line x1="${ax}" y1="${ay}" x2="${ex}" y2="${ey}" stroke="${col}" stroke-width="1.5"/>`;}
       const[tx,ty]=pt(rH-12,lon);
-      s+=`<text x="${tx}" y="${ty+4}" text-anchor="middle" font-size="12" font-family="SF Mono,monospace" fill="${col}" font-weight="700">${lbl}</text>`;
+      s+=`<text x="${tx}" y="${ty+4}" text-anchor="middle" font-size="14" font-family="SF Mono,monospace" fill="${col}" font-weight="700">${lbl}</text>`;
       // AC and MC also get their exact degree written right next to them, on the wheel
       if(lbl==="AC"||lbl==="MC"){
         const sf=signFromLon(lon);const dm=Math.floor((sf.degInSign%1)*60);
         const degStr=`${Math.floor(sf.degInSign)}°${String(dm).padStart(2,"0")}′ ${sf.sign.slice(0,3)}`;
         const[dgx,dgy]=pt(rO+12,lon);
-        s+=`<text x="${dgx}" y="${dgy+3}" text-anchor="middle" font-size="8.5" font-family="SF Mono,monospace" fill="${col}" font-weight="700">${degStr}</text>`;
+        s+=`<text x="${dgx}" y="${dgy+3}" text-anchor="middle" font-size="11" font-family="SF Mono,monospace" fill="${col}" font-weight="700">${degStr}</text>`;
       }
     });
   }
@@ -822,11 +850,11 @@ function drawWheelInto(svgId,natal,angles){
   for(const p of PLANETS){if(natal[p.key]==null)continue;let draw=natal[p.key];
     for(const q of placed){if(Math.abs(((draw-q+540)%360)-180)<6)draw+=6;}placed.push(draw);
     const[px,py]=pt(rP,draw),[tx,ty]=pt(rZ-2,natal[p.key]),[mx,my]=pt(rZ-10,natal[p.key]);
-    s+=`<line x1="${tx}" y1="${ty}" x2="${mx}" y2="${my}" stroke="rgba(180,196,255,.4)" stroke-width=".7"/>`;
-    s+=`<text x="${px}" y="${py+5}" text-anchor="middle" font-size="15" class="glyph">${p.glyph}</text>`;
+    s+=`<line x1="${tx}" y1="${ty}" x2="${mx}" y2="${my}" stroke="rgba(201,212,245,.6)" stroke-width=".9"/>`;
+    s+=`<text x="${px}" y="${py+5}" text-anchor="middle" font-size="18" class="glyph">${p.glyph}</text>`;
     // exact degree-in-sign just inside the glyph
-    const sf=signFromLon(natal[p.key]);const[ddx,ddy]=pt(rP-13,draw);
-    s+=`<text x="${ddx}" y="${ddy+3}" text-anchor="middle" font-size="8.5" fill="#9fb0d8" font-family="SF Mono,monospace">${Math.floor(sf.degInSign)}°</text>`;
+    const sf=signFromLon(natal[p.key]);const[ddx,ddy]=pt(rP-15,draw);
+    s+=`<text x="${ddx}" y="${ddy+3}" text-anchor="middle" font-size="10.5" fill="#c9d4f5" font-family="SF Mono,monospace">${Math.floor(sf.degInSign)}°</text>`;
   }
   svg.innerHTML=s;
 }
@@ -1370,7 +1398,7 @@ function drawTriWheel(svgId,natal,angles,prog,transit,liveNow){
     const a=i*30;const[x1,y1]=pt(rZ,a),[x2,y2]=pt(rO,a);
     s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="gtick"/>`;
     const[gx,gy]=pt((rZ+rO)/2,a+15);
-    s+=`<text x="${gx}" y="${gy+5}" text-anchor="middle" font-size="13" fill="#e8c97a">${SIGN_GLYPH[i]}</text>`;
+    s+=`<text x="${gx}" y="${gy+5}" text-anchor="middle" font-size="15" fill="#e8c97a">${SIGN_GLYPH[i]}</text>`;
   }
   // angle markers: short ticks at the rim + labelled degrees (full cross-lines clutter the 3 rings)
   if(angles){
@@ -1401,10 +1429,10 @@ function drawTriWheel(svgId,natal,angles,prog,transit,liveNow){
       const sf=signFromLon(chart[p.key]);const deg=Math.floor(sf.degInSign);
       const[px,py]=pt(r,draw);const[tx,ty]=pt(r,chart[p.key]);const[tox,toy]=pt(r+9,chart[p.key]);
       s+=`<line x1="${tx}" y1="${ty}" x2="${tox}" y2="${toy}" stroke="${color}" stroke-width=".6" opacity=".5"/>`;
-      s+=`<text x="${px}" y="${py+4}" text-anchor="middle" font-size="12" fill="${color}" class="${cls}">${p.glyph}</text>`;
+      s+=`<text x="${px}" y="${py+4}" text-anchor="middle" font-size="14" fill="${color}" class="${cls}">${p.glyph}</text>`;
       // degree number, just inside the glyph toward the hub
       const[dx,dy]=pt(degR,draw);
-      s+=`<text x="${dx}" y="${dy+3}" text-anchor="middle" font-size="8" fill="${color}" opacity=".85" font-family="SF Mono,monospace">${deg}°</text>`;
+      s+=`<text x="${dx}" y="${dy+3}" text-anchor="middle" font-size="9.5" fill="${color}" opacity=".85" font-family="SF Mono,monospace">${deg}°</text>`;
     }
   };
   // natal (white), progressed (teal), transit (rose) — degree numbers sit just inside each glyph
@@ -1538,20 +1566,51 @@ function openProfileMenu(){
   $("pmenu").classList.remove("hide");
 }
 function closeProfileMenu(){$("pmenu").classList.add("hide");}
-function showDash(){stopTriWheelLive();$("onboard").classList.add("hide");$("natal").classList.add("hide");$("dash").classList.remove("hide");monthRendered=false;dayOffset=0;renderDash();}
+function showDash(){stopTriWheelLive();$("onboard").classList.add("hide");$("natal").classList.add("hide");$("dash").classList.remove("hide");monthRendered=false;viewedTimeMs=Date.now();renderDash();}
 function showOnboard(){stopTriWheelLive();$("dash").classList.add("hide");$("natal").classList.add("hide");$("onboard").classList.remove("hide");populateDateTime();
   // show the back bar only if the user already has at least one saved chart (i.e. not first-run)
   if(profiles.length>0){$("onboard-topbar").classList.remove("hide");}else{$("onboard-topbar").classList.add("hide");}
   if(profile){$("i-name").value=profile.name||"";setDateTime(profile.date||"",profile.time||"");if(profile.placeName){$("i-place").value=profile.placeName;chosenPlace={name:profile.placeName,lat:profile.lat,lng:profile.lng,tz:profile.tz,tzOffset:profile.tzOffset};$("place-set").textContent=`✓ ${profile.lat.toFixed(2)}, ${profile.lng.toFixed(2)} · ${profile.tz||"UTC"}`;$("place-set").classList.remove("hide");}}}
 
-let dayOffset=0; // 0 = today, ±7 max
-function viewedDate(){const d=new Date();d.setDate(d.getDate()+dayOffset);return d;}
+let viewedTimeMs=null; // the exact frozen moment the dashboard is showing; set on load, never auto-updates
+let dayOffset=0;       // whole days from today to the viewed day; recomputed in renderDash()
+function viewedTimeOrNow(){return viewedTimeMs==null?Date.now():viewedTimeMs;}
+function viewedDate(){return new Date(viewedTimeOrNow());}
+// is the frozen time within a minute of the real current time? (so we can label it "now")
+function viewedIsNow(){return viewedTimeMs==null||Math.abs(viewedTimeMs-Date.now())<60000;}
+function recomputeDayOffset(){
+  const v=new Date(viewedTimeOrNow());v.setHours(0,0,0,0);
+  const t=new Date();t.setHours(0,0,0,0);
+  dayOffset=Math.round((v-t)/86400000);
+}
+function refreshToNow(){viewedTimeMs=Date.now();renderDash();} // manual "refresh to current time"
+function stepTime(mins){
+  // nudge the frozen moment; the chart only moves when the user does this
+  viewedTimeMs=viewedTimeOrNow()+mins*60000;
+  renderDash();
+}
+function goToDay(off){
+  // jump to a whole-day offset (noon), keeping everything frozen
+  const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+off);
+  viewedTimeMs=d.getTime();
+  renderDash();
+}
 function renderDash(){
   if(!window.Astronomy){$("reading").innerHTML=`<div class="err">Couldn't load the ephemeris library. Check the connection and reload.</div>`;return;}
   renderProfileCorners();
+  recomputeDayOffset();
   const now=viewedDate(),hr=new Date().getHours();
   const isToday=dayOffset===0;
+  const atNow=viewedIsNow();
+  // greeting reflects the viewed day
   $("greeting").textContent=isToday?(hr<12?"Good morning":hr<18?"Good afternoon":"Good evening"):(dayOffset===1?"Tomorrow":dayOffset===-1?"Yesterday":dayOffset>0?`In ${dayOffset} days`:`${-dayOffset} days ago`);
+  // the clock shows the FROZEN moment being charted; it only changes when the user refreshes/steps
+  const clk=$("time-clock");
+  if(clk){
+    const hh=String(now.getHours()).padStart(2,"0"),mm=String(now.getMinutes()).padStart(2,"0");
+    clk.textContent=`${hh}:${mm}`;
+  }
+  const nowBtn=$("time-now");if(nowBtn){nowBtn.classList.toggle("live",atNow);nowBtn.textContent="↻ Now";}
   $("today-date").textContent=now.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
   computeChartData();cachedTransit=computeChart(now);cachedAspects=findAspects(cachedNatal,cachedTransit);
   $("dash-profile-name").textContent=profile&&profile.name?`${profile.name}'s sky`:"";
@@ -1565,9 +1624,6 @@ function renderDash(){
   cachedEvents=notableEvents(now);
   renderEvents(cachedEvents);
   renderRelateToday(cachedTransit);
-  // nav arrows state
-  $("day-prev").classList.toggle("disabled",dayOffset<=-7);
-  $("day-next").classList.toggle("disabled",dayOffset>=7);
   // Today tab: highlighted only when actually on today; label hints to return
   const todayTab=document.querySelector('.tab[data-view="today"]');
   if(todayTab){
@@ -1601,12 +1657,12 @@ function loadNowLoc(){try{const r=localStorage.getItem("stellar.nowloc");if(r)no
 function saveNowLoc(l){nowLoc=l;try{localStorage.setItem("stellar.nowloc",JSON.stringify(l));}catch(e){}}
 function renderSkyNow(){
   if(!window.Astronomy)return;
-  // use the viewed day (noon) so the chart actually shifts as you change days
-  const isToday=dayOffset===0;
-  const when=isToday?new Date():(()=>{const d=viewedDate();d.setHours(12,0,0,0);return d;})();
+  // the chart is a STILL snapshot of the frozen viewed moment; it only changes when the user
+  // refreshes to now or steps the clock by minutes / hours / days. nothing moves on its own.
+  const when=viewedDate();
   const sky=computeChart(when);
   // angles need a location. prefer a location the user set for "sky now"; otherwise fall back
-  // to their birth location so today's Midheaven + Ascendant still compute and show on the wheel.
+  // to their birth location so the Midheaven + Ascendant still compute and show on the wheel.
   let angles=null,locUsed=null;
   if(nowLoc&&nowLoc.lat!=null){angles=computeAngles(when,nowLoc.lat,nowLoc.lng);locUsed=nowLoc.name||null;}
   else if(profile&&profile.lat!=null){angles=computeAngles(when,profile.lat,profile.lng);locUsed=profile.placeName||null;}
@@ -1615,7 +1671,7 @@ function renderSkyNow(){
   const fmtDM=(lon)=>{const sf=signFromLon(lon);const dm=Math.floor((sf.degInSign%1)*60);return `${Math.floor(sf.degInSign)}°${String(dm).padStart(2,"0")}′ ${sf.sign}`;};
   let summ=`Sun ${sun.degInSign.toFixed(0)}° ${sun.sign} · Moon ${moon.degInSign.toFixed(0)}° ${moon.sign}`;
   if(angles){
-    const whenWord=isToday?"right now":"at noon";
+    const whenWord="at "+String(when.getHours()).padStart(2,"0")+":"+String(when.getMinutes()).padStart(2,"0");
     summ+=`<br><span style="color:#7fc8c4">Ascendant</span> ${fmtDM(angles.asc)} · <span style="color:#e8c97a">Midheaven</span> ${fmtDM(angles.mc)} <span style="opacity:.65">(${whenWord}${locUsed?" · "+locUsed:""})</span>`;
   }else{
     summ+=`<br><span style="opacity:.7">add a birth place to see the Ascendant &amp; Midheaven</span>`;
@@ -1787,8 +1843,7 @@ function renderJournalCalendar(year,mon,daysInMonth,startDow){
   $("journal-grid").innerHTML=cells;
   $("journal-grid").querySelectorAll(".jcell").forEach(el=>el.addEventListener("click",()=>{
     const d=+el.dataset.jday;const delta=Math.round((new Date(year,mon,d)-new Date(today.getFullYear(),today.getMonth(),today.getDate()))/86400000);
-    if(delta<-7||delta>7){alert("Journal jump works within a week of today. Use the day arrows for older entries.");return;}
-    dayOffset=delta;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelector('.tab[data-view="today"]').classList.add("active");$("view-today").classList.remove("hide");$("view-month").classList.add("hide");$("view-horo")&&$("view-horo").classList.add("hide");renderDash();$("journal-text")&&$("journal-text").scrollIntoView({behavior:"smooth",block:"center"});
+    goToDay(delta);document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelector('.tab[data-view="today"]').classList.add("active");$("view-today").classList.remove("hide");$("view-month").classList.add("hide");$("view-horo")&&$("view-horo").classList.add("hide");renderDash();$("journal-text")&&$("journal-text").scrollIntoView({behavior:"smooth",block:"center"});
   }));
 }
 function exportJournalPDF(){
@@ -2209,9 +2264,9 @@ function renderTriWheel(){
     const anglesForTri=(cachedAngles&&_cacheProfileId===tp.id)?cachedAngles:((tp.time&&tp.lat!=null)?computeAngles(buildBirthDate(tp),tp.lat,tp.lng):null);
     const prog=computeProgressed(tp);
     const transit=computeChart(new Date());
-    drawTriWheel("tri-wheel",natalForTri,anglesForTri,prog,transit,new Date());
-    // start the live second-by-second transit motion (planets each move at their own rate)
-    startTriWheelLive(natalForTri,anglesForTri,prog);
+    // static tri-wheel (no live counter on this chart) — snapshot at load
+    stopTriWheelLive();
+    drawTriWheel("tri-wheel",natalForTri,anglesForTri,prog,transit,null);
     const pSun=signFromLon(prog.Sun),pMoon=signFromLon(prog.Moon),nSun=signFromLon(natalForTri.Sun);
     const pMerc=signFromLon(prog.Mercury),pVen=signFromLon(prog.Venus),pMars=signFromLon(prog.Mars);
     const birth=buildBirthDate(tp);const age=Math.floor((new Date()-birth)/(365.25*24*3600*1000));
@@ -2923,19 +2978,24 @@ $("pcorner-natal").addEventListener("click",openProfileMenu);
 $("pmenu-close").addEventListener("click",closeProfileMenu);
 $("pmenu").addEventListener("click",e=>{if(e.target.id==="pmenu")closeProfileMenu();});
 $("pmenu-add").addEventListener("click",()=>{closeProfileMenu();startNewProfile();});
-// day navigation
-function goDay(delta){const nv=dayOffset+delta;if(nv<-7||nv>7)return;dayOffset=nv;renderDash();}
-$("day-prev").addEventListener("click",()=>goDay(-1));
-$("day-next").addEventListener("click",()=>goDay(1));
-// keyboard arrows move between days on desktop (only when Today view is active and not typing)
+// time clock navigation
+function goDay(delta){goToDay(dayOffset+delta);}
+// "Now" resets to live; steppers nudge the frozen time by minutes
+var tn=$("time-now");if(tn)tn.addEventListener("click",refreshToNow);
+document.querySelectorAll(".time-step").forEach(b=>b.addEventListener("click",()=>{const m=parseInt(b.dataset.step,10);if(!isNaN(m))stepTime(m);}));
+// keyboard arrows step by a day; up/down step by an hour (desktop, Today view, not typing)
 document.addEventListener("keydown",e=>{
-  if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;
+  const keys=["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"];
+  if(!keys.includes(e.key))return;
   const dashVisible=!$("dash").classList.contains("hide");
   const onToday=!$("view-today").classList.contains("hide");
   const typing=/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement||{}).tagName||"");
   if(!dashVisible||!onToday||typing)return;
   e.preventDefault();
-  goDay(e.key==="ArrowLeft"?-1:1);
+  if(e.key==="ArrowLeft")stepTime(-1440);
+  else if(e.key==="ArrowRight")stepTime(1440);
+  else if(e.key==="ArrowUp")stepTime(60);
+  else if(e.key==="ArrowDown")stepTime(-60);
 });
 $("journal-save").addEventListener("click",saveJournal);
 $("journal-export").addEventListener("click",exportJournalPDF);
@@ -3013,7 +3073,7 @@ $("now-place").addEventListener("input",e=>{
   },320);
 });
 $("reroll").addEventListener("click",fetchReading);
-document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{const v=t.dataset.view;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");$("view-today").classList.toggle("hide",v!=="today");$("view-month").classList.toggle("hide",v!=="month");$("view-horo").classList.toggle("hide",v!=="horo");$("view-atlas")&&$("view-atlas").classList.toggle("hide",v!=="atlas");if(v==="today"){if(dayOffset!==0){dayOffset=0;renderDash();}}else if(v==="month"&&!monthRendered){renderMonth();monthRendered=true;}else if(v==="horo"){horoMonthOffset=0;horoYearOffset=0;try{renderMonthlyHoroscope();renderYearlyHoroscope();wireCollapsibles();}catch(e){}}else if(v==="atlas"){try{renderAtlas();}catch(e){console.error(e);}}}));
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{const v=t.dataset.view;document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");$("view-today").classList.toggle("hide",v!=="today");$("view-month").classList.toggle("hide",v!=="month");$("view-horo").classList.toggle("hide",v!=="horo");$("view-atlas")&&$("view-atlas").classList.toggle("hide",v!=="atlas");if(v==="today"){if(!viewedIsNow()||dayOffset!==0){refreshToNow();}}else if(v==="month"&&!monthRendered){renderMonth();monthRendered=true;}else if(v==="horo"){horoMonthOffset=0;horoYearOffset=0;try{renderMonthlyHoroscope();renderYearlyHoroscope();wireCollapsibles();}catch(e){}}else if(v==="atlas"){try{renderAtlas();}catch(e){console.error(e);}}}));
 /* ---- Atlas wiring ---- */
 (function wireAtlas(){
   var gen=$("acg-generate");if(gen)gen.addEventListener("click",function(){try{generateAtlasMap();}catch(e){console.error(e);}});
