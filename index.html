@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Stellar — Your sky, today</title>
 <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --ink:#0a0e1a;--ink2:#111729;--line:rgba(180,196,255,.14);--star:#f4f0ff;
@@ -219,7 +220,21 @@
 </head>
 <body>
 <div class="wrap">
-  <section id="onboard">
+  <section id="auth">
+    <header style="text-align:center;padding:48px 0 6px">
+      <div class="mark">✦ Stellar ✦</div>
+      <h1>Your sky,<br>today</h1>
+      <div class="tag">Sign in to save your charts and sync across devices</div>
+    </header>
+    <div class="card" style="max-width:420px;margin:22px auto 0">
+      <div class="label">Email sign-in</div>
+      <p class="dim" style="font-size:13px;margin:8px 0 12px">We'll email you a magic link, no password to remember.</p>
+      <input id="auth-email" type="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
+      <button class="btn" id="auth-btn" style="margin-top:12px">Send magic link</button>
+      <div id="auth-msg" class="dim" style="font-size:13px;margin-top:10px"></div>
+    </div>
+  </section>
+  <section id="onboard" class="hide">
     <div class="topbar hide" id="onboard-topbar"><button class="linkbtn" id="onboard-back">← back</button><div class="mark" style="margin:0">✦ Stellar</div></div>
     <header><div class="mark">✦ Stellar ✦</div><h1>Your sky,<br>today</h1>
       <div class="tag">A daily reading drawn from your real birth chart</div></header>
@@ -660,6 +675,14 @@
       <div class="pmenu-head"><span class="label">Your charts</span><button class="linkbtn" id="pmenu-close">close</button></div>
       <div id="pmenu-list"></div>
       <button class="btn ghost" id="pmenu-add" style="margin-top:12px">+ Add a chart</button>
+      <div id="pmenu-account" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span id="pmenu-email" style="font-size:13px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+          <button class="linkbtn" id="pmenu-signout">sign out</button>
+        </div>
+        <button class="btn ghost" id="pmenu-sync" style="margin-top:12px">↻ Sync now</button>
+        <div id="pmenu-sync-status" class="dim" style="font-size:12px;margin-top:8px;text-align:center"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -895,7 +918,7 @@ function loadProfile(){
   profile=profiles.find(p=>p.id===activeId)||profiles[0]||null;
   if(profile)activeId=profile.id;
 }
-function persistProfiles(){try{localStorage.setItem("stellar.profiles",JSON.stringify(profiles));localStorage.setItem("stellar.activeId",activeId||"");}catch(e){}}
+function persistProfiles(){try{localStorage.setItem("stellar.profiles",JSON.stringify(profiles));localStorage.setItem("stellar.activeId",activeId||"");}catch(e){} if(typeof syncPush==="function"){syncPush("stellar.profiles");syncPush("stellar.activeId");}}
 function saveProfile(p){
   // update existing active profile, or add a new one
   if(p.id&&profiles.some(x=>x.id===p.id)){profiles=profiles.map(x=>x.id===p.id?p:x);}
@@ -1648,13 +1671,13 @@ function renderJournal(date){
 }
 function saveJournal(){
   const date=viewedDate();const txt=$("journal-text").value;
-  try{if(txt.trim())localStorage.setItem(journalKey(date),txt);else localStorage.removeItem(journalKey(date));$("journal-status").textContent="saved ✓";setTimeout(()=>{if($("journal-status"))$("journal-status").textContent=txt.trim()?"saved":"";},1500);}catch(e){$("journal-status").textContent="couldn't save";}
+  try{const _jk=journalKey(date);if(txt.trim())localStorage.setItem(_jk,txt);else localStorage.removeItem(_jk);if(typeof syncPush==="function")syncPush(_jk);$("journal-status").textContent="saved ✓";setTimeout(()=>{if($("journal-status"))$("journal-status").textContent=txt.trim()?"saved":"";},1500);}catch(e){$("journal-status").textContent="couldn't save";}
 }
 
 /* ============ LIVE SKY-NOW CHART ============ */
 let nowLoc=null; // {lat,lng,name,tzOffset}
 function loadNowLoc(){try{const r=localStorage.getItem("stellar.nowloc");if(r)nowLoc=JSON.parse(r);}catch(e){}}
-function saveNowLoc(l){nowLoc=l;try{localStorage.setItem("stellar.nowloc",JSON.stringify(l));}catch(e){}}
+function saveNowLoc(l){nowLoc=l;try{localStorage.setItem("stellar.nowloc",JSON.stringify(l));}catch(e){} if(typeof syncPush==="function")syncPush("stellar.nowloc");}
 function renderSkyNow(){
   if(!window.Astronomy)return;
   // the chart is a STILL snapshot of the frozen viewed moment; it only changes when the user
@@ -3086,19 +3109,213 @@ document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{con
   wireAcgFsGestures();
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("acg-fs").classList.contains("hide"))closeAcgFullscreen();});
 })();
-loadProfile();
-window.addEventListener("load",()=>{
-  populateDateTime();loadNowLoc();
-  if(checkSharedChart()){
-    // someone opened a shared chart link — offer to save it
+/* Boot is handled by initAuth() in the cloud-sync script below: it checks the
+   Supabase session, pulls saved state into localStorage, then runs the app. */
+</script>
+<div id="sync-dot" title="Synced" style="position:fixed;right:10px;bottom:10px;width:8px;height:8px;border-radius:50%;background:var(--teal);opacity:.5;z-index:50;pointer-events:none;display:none"></div>
+<script>
+/* ============================================================
+   CLOUD SYNC + MAGIC-LINK AUTH  (Supabase — Stellar project)
+   Mirrors Stellar's localStorage into per-user rows so charts,
+   journal entries, and your saved location follow you across
+   devices. The astrology engine is untouched; this layer only
+   loads state on sign-in and saves it on change.
+   ============================================================ */
+const SB_URL='https://tfukuaqtkbzdjssanrly.supabase.co';
+const SB_KEY='PASTE_STELLAR_PUBLISHABLE_KEY_HERE'; // Stellar project → Settings → API → Publishable key
+let sb=null, sbUser=null;
+try{ sb=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ sb=null; }
+
+/* which localStorage keys ride to the cloud (profiles, active chart, saved
+   location, and every journal entry). UI-only keys like collapsed sections and
+   the daily tarot-reveal flag stay local on purpose. */
+function isSyncKey(k){
+  return k==="stellar.profiles"||k==="stellar.activeId"||k==="stellar.nowloc"||k.indexOf("stellar.journal.")===0;
+}
+function allSyncKeysLocal(){
+  const out=[];
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(isSyncKey(k))out.push(k);}
+  return out;
+}
+let _lastSync=0;
+function setSyncDot(ok){
+  if(ok){ _lastSync=Date.now(); updateSyncStatus(); }
+  const d=$("sync-dot"); if(!d)return;
+  d.style.background=ok?"var(--teal)":"var(--rose)";
+  d.title=ok?"Synced":"Offline — saved on this device";
+}
+function updateSyncStatus(){
+  const el=$("pmenu-sync-status"); if(!el)return;
+  if(!sb){ el.textContent="Saved on this device"; return; }
+  el.textContent=_lastSync?("Last synced "+new Date(_lastSync).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})):"Not synced yet";
+}
+function setSyncBtn(label,busy){
+  const b=$("pmenu-sync"); if(!b)return;
+  b.textContent=label; b.disabled=!!busy; b.style.opacity=busy?"0.6":"1";
+}
+
+/* debounced push of one key: upsert if present, delete if it was cleared.
+   _pending tracks keys awaiting a push so a manual sync can flush them. */
+const _pushTimers={}; const _pending=new Set();
+function syncPush(key){
+  if(!sb||!sbUser)return;
+  _pending.add(key);
+  clearTimeout(_pushTimers[key]);
+  _pushTimers[key]=setTimeout(()=>{ doPush(key).catch(()=>{}); },500);
+}
+async function doPush(key){
+  _pending.delete(key);
+  if(!sb||!sbUser)return;
+  const raw=localStorage.getItem(key);
+  if(raw===null){
+    const {error}=await sb.from("stellar_state").delete().eq("user_id",sbUser.id).eq("key",key);
+    if(error)throw error;
+  }else{
+    const {error}=await sb.from("stellar_state").upsert(
+      {user_id:sbUser.id,key,value:raw,updated_at:new Date().toISOString()},
+      {onConflict:"user_id,key"}
+    );
+    if(error)throw error;
+  }
+  setSyncDot(true);
+}
+async function flushPending(){
+  const keys=[..._pending];
+  for(const k of keys){ clearTimeout(_pushTimers[k]); try{ await doPush(k); }catch(e){ setSyncDot(false); } }
+}
+
+/* pull every saved row into localStorage — runs right after sign-in, before
+   the app reads anything. With an empty cloud (first ever sign-in) this is a
+   no-op, so existing local charts are preserved, then seeded up below. */
+async function hydrateFromCloud(){
+  if(!sb||!sbUser)return;
+  try{
+    const {data,error}=await sb.from("stellar_state").select("key,value");
+    if(error)throw error;
+    (data||[]).forEach(row=>{
+      const v=(typeof row.value==="string")?row.value:JSON.stringify(row.value);
+      try{ localStorage.setItem(row.key,v); }catch(e){}
+    });
+    setSyncDot(true);
+  }catch(e){ setSyncDot(false); }
+}
+/* push whatever's local up to the cloud (captures first-device data and keeps
+   the two in step). Upserts, so re-running is harmless. */
+function seedLocalToCloud(){
+  if(!sb||!sbUser)return;
+  allSyncKeysLocal().forEach(k=>syncPush(k));
+}
+
+async function sendMagicLink(){
+  const email=($("auth-email").value||"").trim();
+  const msg=$("auth-msg");
+  if(!email||email.indexOf("@")<0){ msg.textContent="Enter a valid email."; return; }
+  if(!sb){ msg.textContent="Sync isn't reachable on this connection."; return; }
+  msg.textContent="Sending…";
+  try{
+    const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
+    if(error)throw error;
+    msg.textContent="Check your email and tap the link to sign in. You can close this tab once you do.";
+  }catch(e){ msg.textContent="Couldn't send the link: "+(e.message||"try again in a moment"); }
+}
+async function signOut(){
+  if(sb){ try{ await sb.auth.signOut(); }catch(e){} }
+  // clear synced data from this device, then return to a clean sign-in
+  allSyncKeysLocal().forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  location.reload();
+}
+function updateAccountRow(){
+  const row=$("pmenu-account"); const em=$("pmenu-email");
+  if(em)em.textContent=(sbUser&&sbUser.email)||"";
+  if(row)row.style.display=(sb&&sbUser)?"block":"none";
+  updateSyncStatus();
+}
+
+/* re-read localStorage and re-render the screen in place, so anything a manual
+   sync just pulled (a chart added on another device, etc.) shows immediately. */
+function reapplyState(){
+  const wasNatal=$("natal")&&!$("natal").classList.contains("hide");
+  loadProfile(); loadNowLoc();
+  _cacheProfileId=null; monthRendered=false; acgGenerated=false; _acgBuiltForId=null;
+  if(profile&&profile.date&&profile.lat!=null){
+    if(wasNatal){ showNatal(); }
+    else{
+      computeChartData&&computeChartData(); renderDash&&renderDash(); renderProfileBar&&renderProfileBar();
+      const active=document.querySelector(".tab.active"); const v=active?active.dataset.view:"today";
+      if(v==="month"){ renderMonth&&renderMonth(); monthRendered=true; }
+      else if(v==="horo"){ try{ renderMonthlyHoroscope(); renderYearlyHoroscope(); wireCollapsibles(); }catch(e){} }
+      else if(v==="atlas"){ try{ renderAtlas(); }catch(e){} }
+    }
+  }
+}
+
+/* manual "Sync now": flush pending local writes, pull the latest, re-render */
+async function manualSync(){
+  if(!sb){ setSyncBtn("Offline",false); setTimeout(()=>setSyncBtn("↻ Sync now",false),1500); return; }
+  if(!sbUser)return;
+  setSyncBtn("Syncing…",true);
+  try{
+    await flushPending();
+    await hydrateFromCloud();
+    reapplyState();
+    setSyncDot(true);
+    setSyncBtn("Synced ✓",false);
+  }catch(e){
+    setSyncDot(false);
+    setSyncBtn("Sync failed — retry",false);
+  }
+  setTimeout(()=>setSyncBtn("↻ Sync now",false),2000);
+}
+
+let _booted=false;
+function bootApp(){
+  if(_booted)return; _booted=true;
+  $("auth")&&$("auth").classList.add("hide");
+  const sd=$("sync-dot"); if(sd&&sb)sd.style.display="block";
+  loadProfile();
+  populateDateTime(); loadNowLoc();
+  if(typeof checkSharedChart==="function" && checkSharedChart()){
     const inc=pendingShared;
     const ok=confirm(`Add ${inc.name||"this shared chart"} to your Stellar?`);
     if(ok){inc.id=newId();profiles.push(inc);activeId=inc.id;profile=inc;persistProfiles();}
-    history.replaceState(null,"",location.pathname); // clear the hash
+    history.replaceState(null,"",location.pathname);
     if(profile){showNatal();return;}
   }
-  if(profile&&profile.date&&profile.lat!=null)showDash();else showOnboard();
-});
+  if(profile&&profile.date&&profile.lat!=null)showDash(); else showOnboard();
+}
+function showAuthScreen(){
+  ["onboard","dash","natal"].forEach(id=>{const el=$(id);if(el)el.classList.add("hide");});
+  $("auth")&&$("auth").classList.remove("hide");
+}
+
+async function initAuth(){
+  // graceful local-only mode if the Supabase library is blocked/offline
+  if(!sb){ bootApp(); return; }
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(session&&session.user){
+      sbUser=session.user;
+      await hydrateFromCloud(); seedLocalToCloud(); updateAccountRow(); bootApp();
+    }else{
+      showAuthScreen();
+    }
+  }catch(e){ showAuthScreen(); }
+  sb.auth.onAuthStateChange(async(_evt,session)=>{
+    if(session&&session.user){
+      sbUser=session.user;
+      if(!_booted){ await hydrateFromCloud(); seedLocalToCloud(); bootApp(); }
+      updateAccountRow();
+    }else{
+      sbUser=null; updateAccountRow();
+    }
+  });
+}
+
+$("auth-btn")&&$("auth-btn").addEventListener("click",sendMagicLink);
+$("auth-email")&&$("auth-email").addEventListener("keydown",e=>{if(e.key==="Enter")sendMagicLink();});
+$("pmenu-signout")&&$("pmenu-signout").addEventListener("click",signOut);
+$("pmenu-sync")&&$("pmenu-sync").addEventListener("click",manualSync);
+window.addEventListener("load",initAuth);
 </script>
 </body>
 </html>
