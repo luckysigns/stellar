@@ -2000,8 +2000,8 @@ function luckyWindowsForDay(refDate,maxWindows){
     let fineBest={d:c.peak,diff:c.diff};
     for(let s=-240;s<=240;s+=20){const d=new Date(c.peak.getTime()+s*1000);const mc=mcAt(d,loc.lat,loc.lng);if(mc==null)continue;let diff=Math.abs(mc-jup)%360;if(diff>180)diff=360-diff;if(diff<fineBest.diff)fineBest={d,diff};}
     const peak=fineBest.d;
-    // the MC is within ~1° of Jupiter for roughly ±4 minutes
-    const time=new Date(peak.getTime()-4*60000),end=new Date(peak.getTime()+4*60000);
+    // the MC is within ~0.5° of Jupiter for ~±2 minutes — a tight 4-minute window
+    const time=new Date(peak.getTime()-2*60000),end=new Date(peak.getTime()+2*60000);
     return {time,end,peak,jupLon:jup};
   });
 }
@@ -2057,7 +2057,7 @@ function mcCrossWindows(refDate,targetLon,maxWindows){
     let fineBest={d:c.peak,diff:c.diff};
     for(let s=-240;s<=240;s+=20){const d=new Date(c.peak.getTime()+s*1000);const mc=mcAt(d,loc.lat,loc.lng);if(mc==null)continue;let diff=Math.abs(mc-targetLon)%360;if(diff>180)diff=360-diff;if(diff<fineBest.diff)fineBest={d,diff};}
     const peak=fineBest.d;
-    return {time:new Date(peak.getTime()-4*60000),end:new Date(peak.getTime()+4*60000),peak,targetLon};
+    return {time:new Date(peak.getTime()-2*60000),end:new Date(peak.getTime()+2*60000),peak,targetLon};
   });
 }
 function transitMarsAspects(date){
