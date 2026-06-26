@@ -42,6 +42,13 @@
   .ac div:hover,.ac div.active{background:var(--gold-soft)}
   .ac small{display:block;color:var(--dim);font-size:12px;font-family:"SF Mono",monospace}
   .place-set{font-size:13px;color:var(--teal);margin-top:6px;font-family:"SF Mono",monospace}
+  .dst-choice{margin:12px 0 2px;padding:12px 14px;background:#10162a;border:1px solid var(--gold-soft);border-radius:14px}
+  .dst-info{font-size:13px;color:var(--star);line-height:1.5;margin-bottom:10px}
+  .dst-seg{display:inline-flex;background:#0a1020;border:1px solid var(--gold-soft);border-radius:10px;overflow:hidden}
+  .dst-opt{background:transparent;border:none;color:#8b95b8;padding:7px 16px;font-size:13px;font-family:inherit;cursor:pointer;transition:all .15s}
+  .dst-opt+.dst-opt{border-left:1px solid var(--gold-soft)}
+  .dst-opt.active{background:var(--gold);color:#1a1205;font-weight:600}
+  .dst-note{font-size:11.5px;color:#8b95b8;line-height:1.5;margin-top:10px}
   .ac-status{font-size:13px;color:var(--dim);margin-top:6px;font-family:"SF Mono",monospace}
   .ac-status.warn{color:var(--rose)}
   .wheelwrap{display:flex;justify-content:center;padding:10px 0 4px}
@@ -107,6 +114,8 @@
   .time-now.live{border-color:var(--teal);box-shadow:0 0 0 3px rgba(127,200,196,.12)}
   .time-steppers{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
   .time-step-group{display:flex;gap:5px;background:#10162a;border:1px solid var(--gold-soft);border-radius:12px;padding:4px}
+  .tri-timehead{text-align:center;margin:14px 0 4px}
+  .tri-clock{font-family:'SF Mono',ui-monospace,monospace;font-size:14px;color:var(--star);letter-spacing:.5px}
   .time-step{background:transparent;border:none;color:var(--gold);min-width:46px;padding:8px 10px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:'SF Mono',ui-monospace,monospace;transition:all .12s}
   .time-step:hover{background:var(--gold);color:#1a1206}
   .time-step:active{transform:scale(.94)}
@@ -277,6 +286,16 @@
       </div>
       <div class="hint">Search any city — coordinates and timezone are pulled in automatically. <button type="button" class="linkbtn" id="manual-toggle" style="color:var(--gold)">Enter coordinates manually</button></div>
 
+      <div id="dst-choice" class="dst-choice hide">
+        <div class="dst-info" id="dst-info"></div>
+        <div class="dst-seg" id="dst-seg">
+          <button type="button" class="dst-opt active" data-dst="auto">Auto</button>
+          <button type="button" class="dst-opt" data-dst="daylight">Daylight</button>
+          <button type="button" class="dst-opt" data-dst="standard">Standard</button>
+        </div>
+        <div class="dst-note" id="dst-note"></div>
+      </div>
+
       <div id="manual-coords" class="hide">
         <div class="row">
           <div class="field"><label>Latitude</label><input id="i-lat" type="text" inputmode="text" placeholder="45.52  (negative = South)"></div>
@@ -325,9 +344,27 @@
     <div id="triwheel-section" class="hide">
       <div class="between"><span class="label">Who you're becoming</span></div>
       <div class="card">
-        <p class="dim" style="font-size:13px;margin-bottom:6px">Three charts in one: your <span style="color:#e8e8f0">natal</span> self (birth), your <span style="color:#7fc8c4">progressed</span> self (who you've grown into), and today's <span style="color:#d98a9e">transits</span> (where the planets are now).</p>
+        <p class="dim" style="font-size:13px;margin-bottom:6px">Three charts in one, reading inside → out: your <span style="color:#e8e8f0">natal</span> self at the centre (birth), your <span style="color:#7fc8c4">progressed</span> self in the middle (who you've grown into), and today's <span style="color:#d98a9e">transits</span> on the outer ring. Each ring carries its own Asc + MC. Step the clock below to move the transit ring through time.</p>
         <div class="wheelwrap wheel-panel"><svg class="wheel" id="tri-wheel" viewBox="-30 -30 460 460"></svg></div>
         <div class="trilegend"><span class="tl-nat">● natal</span><span class="tl-prog">● progressed</span><span class="tl-trans">● transits</span></div>
+        <div class="tri-timehead">
+          <div class="tri-clock" id="tri-clock">—</div>
+          <div class="time-controls" style="margin-top:8px">
+            <button class="time-now" id="tri-now">↻ Now</button>
+            <div class="time-steppers">
+              <div class="time-step-group">
+                <button class="time-step" data-tstep="-1440" aria-label="back one day">−1d</button>
+                <button class="time-step" data-tstep="-60" aria-label="back one hour">−1h</button>
+                <button class="time-step" data-tstep="-4" aria-label="back four minutes">−4m</button>
+              </div>
+              <div class="time-step-group">
+                <button class="time-step" data-tstep="4" aria-label="forward four minutes">+4m</button>
+                <button class="time-step" data-tstep="60" aria-label="forward one hour">+1h</button>
+                <button class="time-step" data-tstep="1440" aria-label="forward one day">+1d</button>
+              </div>
+            </div>
+          </div>
+        </div>
         <div id="prog-body" style="margin-top:16px"></div>
       </div>
     </div>
@@ -460,24 +497,8 @@
     <div class="timehead" id="timehead">
       <div class="time-display">
         <div class="label" id="greeting">Good morning</div>
-        <div class="time-clock" id="time-clock">—</div>
         <div class="d" id="today-date"></div>
         <div class="dim" id="dash-profile-name" style="font-size:13px;margin-top:2px"></div>
-      </div>
-      <div class="time-controls">
-        <button class="time-now" id="time-now">↻ Now</button>
-        <div class="time-steppers">
-          <div class="time-step-group">
-            <button class="time-step" data-step="-1440" aria-label="back one day">−1d</button>
-            <button class="time-step" data-step="-60" aria-label="back one hour">−1h</button>
-            <button class="time-step" data-step="-4" aria-label="back four minutes">−4m</button>
-          </div>
-          <div class="time-step-group">
-            <button class="time-step" data-step="4" aria-label="forward four minutes">+4m</button>
-            <button class="time-step" data-step="60" aria-label="forward one hour">+1h</button>
-            <button class="time-step" data-step="1440" aria-label="forward one day">+1d</button>
-          </div>
-        </div>
       </div>
     </div>
     <div class="tabs">
@@ -950,7 +971,7 @@ function switchProfile(id){const p=profiles.find(x=>x.id===id);if(!p)return;acti
   }
 }
 function deleteProfile(id){profiles=profiles.filter(x=>x.id!==id);if(activeId===id){profile=profiles[0]||null;activeId=profile?profile.id:null;}persistProfiles();}
-function startNewProfile(){profile=null;chosenPlace=null;$("i-name").value="";setDateTime("","");$("i-place").value="";$("place-set").classList.add("hide");showOnboard();}
+function startNewProfile(){profile=null;chosenPlace=null;chosenDstMode="auto";$("i-name").value="";setDateTime("","");$("i-place").value="";$("place-set").classList.add("hide");$("dst-choice")&&$("dst-choice").classList.add("hide");showOnboard();}
 /* ---- date/time scroll selectors ---- */
 const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
 function populateDateTime(){
@@ -994,12 +1015,60 @@ function buildBirthDate(p){
   const[Y,M,D]=p.date.split("-").map(Number);
   const t=p.time||"12:00";const[h,mi]=t.split(":").map(Number);
   if(p.tz&&/\//.test(p.tz)){
-    const guess=new Date(Date.UTC(Y,M-1,D,h,mi,0));
-    const off=offsetAtInstant(p.tz,guess);
+    let off=null;
+    const mode=p.dstMode||"auto";
+    if(mode==="daylight"||mode==="standard"){
+      const m=tzModes(p.tz,p.date);
+      if(m)off=(mode==="daylight"?m.dayOff:m.stdOff);
+    }
+    if(off==null){
+      const guess=new Date(Date.UTC(Y,M-1,D,h,mi,0));
+      off=offsetAtInstant(p.tz,guess);
+    }
     if(off!=null){return new Date(Date.UTC(Y,M-1,D,h-Math.trunc(off),mi-Math.round((off%1)*60),0));}
   }
   const off=(typeof p.tzOffset==="number")?p.tzOffset:0;
   return new Date(Date.UTC(Y,M-1,D,h-Math.trunc(off),mi-Math.round((off%1)*60),0));
+}
+/* ---- daylight / standard time helpers (for the birth-time DST chooser) ---- */
+function zoneAbbr(tzName,when){try{const p=new Intl.DateTimeFormat("en-US",{timeZone:tzName,timeZoneName:"short"}).formatToParts(when);return (p.find(x=>x.type==="timeZoneName")||{}).value||"";}catch(e){return "";}}
+function tzModes(tzName,dateStr){
+  // standard vs daylight offset + abbreviation for the birth year (works in both hemispheres)
+  const yr=parseInt((dateStr||"").slice(0,4),10);const y=isNaN(yr)?2000:yr;
+  const jan=new Date(Date.UTC(y,0,15,12,0,0)),jul=new Date(Date.UTC(y,6,15,12,0,0));
+  const oJan=offsetAtInstant(tzName,jan),oJul=offsetAtInstant(tzName,jul);
+  if(oJan==null||oJul==null)return null;
+  const stdOff=Math.min(oJan,oJul),dayOff=Math.max(oJan,oJul); // DST always shifts clocks forward (larger offset)
+  const observesDST=Math.abs(dayOff-stdOff)>0.01;
+  const stdSample=(oJan<=oJul)?jan:jul,daySample=(oJan>=oJul)?jan:jul;
+  return {stdOff,dayOff,observesDST,stdAbbr:zoneAbbr(tzName,stdSample),dayAbbr:observesDST?zoneAbbr(tzName,daySample):null};
+}
+function fmtOff(o){if(o==null)return "UTC";const s=o<0?"−":"+";const a=Math.abs(o);const h=Math.floor(a);const m=Math.round((a-h)*60);return `UTC${s}${h}${m?":"+String(m).padStart(2,"0"):""}`;}
+let chosenDstMode="auto";
+function renderDstChoice(){
+  const box=$("dst-choice");if(!box)return;
+  const tz=chosenPlace&&chosenPlace.tz;const dateStr=getDateValue();
+  if(!tz||!/\//.test(tz)||!dateStr){box.classList.add("hide");return;}
+  const modes=tzModes(tz,dateStr);
+  const place=tz.split("/").pop().replace(/_/g," ");
+  box.classList.remove("hide");
+  if(!modes||!modes.observesDST){
+    $("dst-seg").classList.add("hide");
+    $("dst-info").innerHTML=`🕑 ${place} didn't change clocks${dateStr?` in ${dateStr.slice(0,4)}`:""} — ${fmtOff(modes?modes.stdOff:null)}, so there's no daylight/standard choice to make.`;
+    $("dst-note").textContent="";
+    return;
+  }
+  $("dst-seg").classList.remove("hide");
+  const timeStr=getTimeValue()||"12:00";const[Y,M,D]=dateStr.split("-").map(Number);const[h,mi]=timeStr.split(":").map(Number);
+  const autoOff=offsetAtInstant(tz,new Date(Date.UTC(Y,M-1,D,h,mi,0)));
+  const autoIsDay=autoOff!=null&&Math.abs(autoOff-modes.dayOff)<0.01;
+  let info;
+  if(chosenDstMode==="daylight")info=`🕑 Using <b>daylight saving</b> — ${modes.dayAbbr||"DST"}, ${fmtOff(modes.dayOff)}.`;
+  else if(chosenDstMode==="standard")info=`🕑 Using <b>standard time</b> — ${modes.stdAbbr||"standard"}, ${fmtOff(modes.stdOff)}.`;
+  else info=`🕑 Auto: read as <b>${autoIsDay?"daylight saving":"standard time"}</b>${(autoIsDay?modes.dayAbbr:modes.stdAbbr)?` (${autoIsDay?modes.dayAbbr:modes.stdAbbr})`:""}, ${fmtOff(autoOff)} — what the timezone database has for this date.`;
+  $("dst-info").innerHTML=info;
+  box.querySelectorAll(".dst-opt").forEach(b=>b.classList.toggle("active",b.dataset.dst===chosenDstMode));
+  $("dst-note").innerHTML=`${place} runs ${modes.dayAbbr||"daylight"} (${fmtOff(modes.dayOff)}) in summer and ${modes.stdAbbr||"standard"} (${fmtOff(modes.stdOff)}) in winter. Auto is right for almost every birth; only override if your records name the other one. It shifts the chart by an hour.`;
 }
 
 let acItems=[],acActive=-1,acTimer=null,chosenPlace=null;
@@ -1021,7 +1090,7 @@ async function searchPlaces(q){
   });
 }
 function renderAc(items){acItems=items;acActive=-1;if(!items.length){$("ac").classList.add("hide");return;}$("ac").innerHTML=items.map((it,i)=>{const region=[it.admin1,it.country].filter(Boolean).join(", ");return `<div data-i="${i}"><span>${it.name}</span><small>${region} · ${it.latitude.toFixed(2)}, ${it.longitude.toFixed(2)}</small></div>`;}).join("");$("ac").classList.remove("hide");$("ac").querySelectorAll("div[data-i]").forEach(el=>el.addEventListener("click",()=>pickPlace(+el.dataset.i)));}
-function pickPlace(i){const it=acItems[i];if(!it)return;const dv=getDateValue();const when=dv?new Date(dv+"T12:00:00Z"):new Date();const off=it.timezone?tzToOffset(it.timezone,when):Math.round(it.longitude/15);chosenPlace={name:it.name,region:[it.admin1,it.country].filter(Boolean).join(", "),lat:it.latitude,lng:it.longitude,tz:it.timezone||`UTC${off>=0?"+":""}${off} (est.)`,tzOffset:off};$("i-place").value=`${it.name}${chosenPlace.region?", "+chosenPlace.region:""}`;$("ac").classList.add("hide");setAcStatus(null);$("place-set").textContent=`✓ ${chosenPlace.lat.toFixed(2)}, ${chosenPlace.lng.toFixed(2)} · ${chosenPlace.tz}`;$("place-set").classList.remove("hide");}
+function pickPlace(i){const it=acItems[i];if(!it)return;const dv=getDateValue();const when=dv?new Date(dv+"T12:00:00Z"):new Date();const off=it.timezone?tzToOffset(it.timezone,when):Math.round(it.longitude/15);chosenPlace={name:it.name,region:[it.admin1,it.country].filter(Boolean).join(", "),lat:it.latitude,lng:it.longitude,tz:it.timezone||`UTC${off>=0?"+":""}${off} (est.)`,tzOffset:off};$("i-place").value=`${it.name}${chosenPlace.region?", "+chosenPlace.region:""}`;$("ac").classList.add("hide");setAcStatus(null);$("place-set").textContent=`✓ ${chosenPlace.lat.toFixed(2)}, ${chosenPlace.lng.toFixed(2)} · ${chosenPlace.tz}`;$("place-set").classList.remove("hide");renderDstChoice();}
 
 /* ============ SECONDARY PROGRESSIONS + TRI-WHEEL ============
    "A day for a year": the progressed chart for your current age is the real sky
@@ -1409,37 +1478,21 @@ function progressedDate(p){
 function computeProgressed(p){
   return computeChart(progressedDate(p));
 }
-function drawTriWheel(svgId,natal,angles,prog,transit,liveNow){
+function drawTriWheel(svgId,natal,natAngles,prog,transit,opts){
   const svg=$(svgId);if(!svg)return;
-  const cx=200,cy=200,rO=192,rZ=164,rNat=146,rProg=116,rTrans=86,rHub=70;
-  const ascLon=angles?angles.asc:0;
+  opts=opts||{};
+  // ring order, inside → out: natal (innermost), progressed (middle), transit (outermost)
+  const cx=200,cy=200,rO=192,rZ=164,rTrans=146,rProg=116,rNat=86,rHub=70;
+  const ascLon=natAngles?natAngles.asc:0;
   const pt=(r,L)=>{const a=(180+(L-ascLon))*Math.PI/180;return[cx+r*Math.cos(a),cy-r*Math.sin(a)];};
   let s=`<circle cx="${cx}" cy="${cy}" r="${rO}" class="gline"/><circle cx="${cx}" cy="${cy}" r="${rZ}" class="gline"/>`;
-  s+=`<circle cx="${cx}" cy="${cy}" r="${rNat}" class="gline" opacity=".4"/><circle cx="${cx}" cy="${cy}" r="${rProg}" class="gline" opacity=".4"/><circle cx="${cx}" cy="${cy}" r="${rTrans}" class="gline" opacity=".4"/><circle cx="${cx}" cy="${cy}" r="${rHub}" class="gline" opacity=".25"/>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="${rTrans}" class="gline" opacity=".4"/><circle cx="${cx}" cy="${cy}" r="${rProg}" class="gline" opacity=".4"/><circle cx="${cx}" cy="${cy}" r="${rNat}" class="gline" opacity=".4"/><circle cx="${cx}" cy="${cy}" r="${rHub}" class="gline" opacity=".25"/>`;
   // zodiac band
   for(let i=0;i<12;i++){
     const a=i*30;const[x1,y1]=pt(rZ,a),[x2,y2]=pt(rO,a);
     s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="gtick"/>`;
     const[gx,gy]=pt((rZ+rO)/2,a+15);
     s+=`<text x="${gx}" y="${gy+5}" text-anchor="middle" font-size="15" fill="#e8c97a">${SIGN_GLYPH[i]}</text>`;
-  }
-  // angle markers: short ticks at the rim + labelled degrees (full cross-lines clutter the 3 rings)
-  if(angles){
-    const degTxt=(lon)=>{const sf=signFromLon(lon);return `${Math.floor(sf.degInSign)}° ${sf.sign.slice(0,3)}`;};
-    const markAngle=(lon,col,name)=>{
-      // tick from just outside the zodiac ring inward a little
-      const[x1,y1]=pt(rZ-6,lon),[x2,y2]=pt(rO,lon);
-      let out=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="2" opacity=".9"/>`;
-      // label sits just outside the outer ring
-      const[lx,ly]=pt(rO+12,lon);
-      out+=`<text x="${lx}" y="${ly+3}" text-anchor="middle" font-size="9" font-weight="700" fill="${col}" font-family="SF Mono,monospace">${name}</text>`;
-      const[dx,dy]=pt(rO+22,lon);
-      out+=`<text x="${dx}" y="${dy+3}" text-anchor="middle" font-size="7.5" fill="${col}" opacity=".85" font-family="SF Mono,monospace">${degTxt(lon)}</text>`;
-      return out;
-    };
-    // Ascendant (teal) and Midheaven (gold) — the two angles that matter most, each shown as a degree
-    s+=markAngle(angles.asc,"#7fc8c4","AC");
-    s+=markAngle(angles.mc,"#e8c97a","MC");
   }
   // helper to place a ring of planets
   const ring=(chart,r,color,cls,degR)=>{
@@ -1458,35 +1511,89 @@ function drawTriWheel(svgId,natal,angles,prog,transit,liveNow){
       s+=`<text x="${dx}" y="${dy+3}" text-anchor="middle" font-size="9.5" fill="${color}" opacity=".85" font-family="SF Mono,monospace">${deg}°</text>`;
     }
   };
-  // natal (white), progressed (teal), transit (rose) — degree numbers sit just inside each glyph
+  // inside → out: natal (white), progressed (teal), transit (rose)
   ring(natal,rNat,"#e8e8f0","tw-nat",rNat-13);
   ring(prog,rProg,"#7fc8c4","tw-prog",rProg-13);
   ring(transit,rTrans,"#d98a9e","tw-trans",rTrans-13);
-  // live clock in the hub — the exact moment these transit positions are computed for
-  if(liveNow){
-    const hh=String(liveNow.getHours()).padStart(2,"0"),mm=String(liveNow.getMinutes()).padStart(2,"0"),ss=String(liveNow.getSeconds()).padStart(2,"0");
-    s+=`<text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="9" fill="#d98a9e" opacity=".8" font-family="SF Mono,monospace" letter-spacing="1">NOW</text>`;
-    s+=`<text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="17" fill="#fff" font-family="SF Mono,monospace" letter-spacing="1">${hh}:${mm}:${ss}</text>`;
-    s+=`<text x="${cx}" y="${cy+27}" text-anchor="middle" font-size="7.5" fill="#8b95b8" font-family="SF Mono,monospace">live · transits moving</text>`;
+  // Asc + MC markers for each chart, sitting on that chart's own ring, colour-matched.
+  // Drawn as short ticks + a small label — never as full lines across the wheel.
+  const markAngles=(angs,r,col)=>{
+    if(!angs)return;
+    [["Asc",angs.asc],["MC",angs.mc]].forEach(([nm,lon])=>{
+      if(lon==null)return;
+      const[x1,y1]=pt(r-8,lon),[x2,y2]=pt(r+8,lon);
+      s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="1.7" opacity=".95"/>`;
+      const sf=signFromLon(lon);
+      const lbl=`${nm} ${Math.floor(sf.degInSign)}°${sf.sign.slice(0,3)}`;
+      const[lx,ly]=pt(r+15,lon);
+      s+=`<text x="${lx}" y="${ly+3}" text-anchor="middle" font-size="7.5" font-weight="700" fill="${col}" font-family="SF Mono,monospace">${lbl}</text>`;
+    });
+  };
+  markAngles(natAngles,rNat,"#e8e8f0");
+  markAngles(opts.progAngles,rProg,"#7fc8c4");
+  markAngles(opts.transAngles,rTrans,"#d98a9e");
+  // hub: the exact moment the outer transit ring is computed for
+  if(opts.viewMs!=null){
+    const d=new Date(opts.viewMs);
+    const hh=String(d.getHours()).padStart(2,"0"),mm=String(d.getMinutes()).padStart(2,"0");
+    if(opts.isLive){
+      const ss=String(d.getSeconds()).padStart(2,"0");
+      s+=`<text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="9" fill="#d98a9e" opacity=".85" font-family="SF Mono,monospace" letter-spacing="1">NOW</text>`;
+      s+=`<text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="16" fill="#fff" font-family="SF Mono,monospace" letter-spacing="1">${hh}:${mm}:${ss}</text>`;
+      s+=`<text x="${cx}" y="${cy+27}" text-anchor="middle" font-size="7" fill="#8b95b8" font-family="SF Mono,monospace">live · transits moving</text>`;
+    }else{
+      const ds=d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+      s+=`<text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="8" fill="#e8c97a" opacity=".85" font-family="SF Mono,monospace" letter-spacing="1">STEPPED</text>`;
+      s+=`<text x="${cx}" y="${cy+11}" text-anchor="middle" font-size="15" fill="#fff" font-family="SF Mono,monospace" letter-spacing="1">${hh}:${mm}</text>`;
+      s+=`<text x="${cx}" y="${cy+26}" text-anchor="middle" font-size="8" fill="#8b95b8" font-family="SF Mono,monospace">${ds}</text>`;
+    }
   }
   svg.innerHTML=s;
 }
-/* ---- live tri-wheel: re-plot the transit ring every second so each planet moves at its own real rate ---- */
-let triWheelTimer=null,_triNatal=null,_triAngles=null,_triProg=null;
-function stopTriWheelLive(){if(triWheelTimer){clearInterval(triWheelTimer);triWheelTimer=null;}}
-function startTriWheelLive(natal,angles,prog){
-  stopTriWheelLive();
-  _triNatal=natal;_triAngles=angles;_triProg=prog;
-  const tick=()=>{
-    // only redraw while the tri-wheel is actually on screen
+/* ---- tri-wheel time control: the outer (transit) ring + its angles follow the chosen moment ---- */
+let triViewedMs=null;            // null = live "now"; otherwise a frozen, stepped moment
+let triTimer=null;
+let _triN=null,_triNA=null,_triP=null,_triPA=null,_triLoc=null; // cached natal, natal-angles, prog, prog-angles, transit location
+function triViewedDate(){return new Date(triViewedMs==null?Date.now():triViewedMs);}
+function triIsLive(){return triViewedMs==null;}
+function stopTriClock(){if(triTimer){clearInterval(triTimer);triTimer=null;}}
+function stopTriWheelLive(){stopTriClock();}   // kept so existing callers still work
+function paintTriWheel(){
+  if(!$("tri-wheel")||!document.body.contains($("tri-wheel")))return;
+  const when=triViewedDate();
+  let transit;try{transit=computeChart(when);}catch(e){return;}
+  let transAngles=null;
+  if(_triLoc){try{transAngles=computeAngles(when,_triLoc.lat,_triLoc.lng);}catch(e){}}
+  drawTriWheel("tri-wheel",_triN,_triNA,_triP,transit,{progAngles:_triPA,transAngles,viewMs:when.getTime(),isLive:triIsLive()});
+  updateTriClock(when);
+}
+function startTriClock(){
+  stopTriClock();
+  if(!triIsLive())return; // only tick while live
+  triTimer=setInterval(()=>{
     const sec=$("triwheel-section");
-    if(!sec||sec.classList.contains("hide")||!document.body.contains($("tri-wheel"))){stopTriWheelLive();return;}
-    const now=new Date();
-    let transit;try{transit=computeChart(now);}catch(e){return;}
-    drawTriWheel("tri-wheel",_triNatal,_triAngles,_triProg,transit,now);
-  };
-  tick();
-  triWheelTimer=setInterval(tick,1000);
+    if(!sec||sec.classList.contains("hide")||!document.body.contains($("tri-wheel"))){stopTriClock();return;}
+    if(triIsLive())paintTriWheel(); else stopTriClock();
+  },1000);
+}
+function updateTriClock(when){
+  const el=$("tri-clock");
+  if(el){
+    const ds=when.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+    const hh=String(when.getHours()).padStart(2,"0"),mm=String(when.getMinutes()).padStart(2,"0");
+    el.innerHTML=triIsLive()?`${ds} · ${hh}:${mm} <span style="color:var(--teal)">· now</span>`:`${ds} · ${hh}:${mm} <span style="color:var(--gold)">· stepped</span>`;
+  }
+  const nb=$("tri-now");if(nb)nb.classList.toggle("live",triIsLive());
+}
+function triStep(mins){
+  triViewedMs=(triViewedMs==null?Date.now():triViewedMs)+mins*60000;
+  stopTriClock();
+  paintTriWheel();
+}
+function triNow(){
+  triViewedMs=null;
+  paintTriWheel();
+  startTriClock();
 }
 function computeChartData(){
   cachedNatal=computeChart(buildBirthDate(profile));
@@ -1593,7 +1700,7 @@ function showDash(){stopTriWheelLive();$("onboard").classList.add("hide");$("nat
 function showOnboard(){stopTriWheelLive();$("dash").classList.add("hide");$("natal").classList.add("hide");$("onboard").classList.remove("hide");populateDateTime();
   // show the back bar only if the user already has at least one saved chart (i.e. not first-run)
   if(profiles.length>0){$("onboard-topbar").classList.remove("hide");}else{$("onboard-topbar").classList.add("hide");}
-  if(profile){$("i-name").value=profile.name||"";setDateTime(profile.date||"",profile.time||"");if(profile.placeName){$("i-place").value=profile.placeName;chosenPlace={name:profile.placeName,lat:profile.lat,lng:profile.lng,tz:profile.tz,tzOffset:profile.tzOffset};$("place-set").textContent=`✓ ${profile.lat.toFixed(2)}, ${profile.lng.toFixed(2)} · ${profile.tz||"UTC"}`;$("place-set").classList.remove("hide");}}}
+  if(profile){$("i-name").value=profile.name||"";setDateTime(profile.date||"",profile.time||"");chosenDstMode=profile.dstMode||"auto";if(profile.placeName){$("i-place").value=profile.placeName;chosenPlace={name:profile.placeName,lat:profile.lat,lng:profile.lng,tz:profile.tz,tzOffset:profile.tzOffset};$("place-set").textContent=`✓ ${profile.lat.toFixed(2)}, ${profile.lng.toFixed(2)} · ${profile.tz||"UTC"}`;$("place-set").classList.remove("hide");}renderDstChoice();}}
 
 let viewedTimeMs=null; // the exact frozen moment the dashboard is showing; set on load, never auto-updates
 let dayOffset=0;       // whole days from today to the viewed day; recomputed in renderDash()
@@ -2286,10 +2393,14 @@ function renderTriWheel(){
     const natalForTri=(cachedNatal&&_cacheProfileId===tp.id)?cachedNatal:computeChart(buildBirthDate(tp));
     const anglesForTri=(cachedAngles&&_cacheProfileId===tp.id)?cachedAngles:((tp.time&&tp.lat!=null)?computeAngles(buildBirthDate(tp),tp.lat,tp.lng):null);
     const prog=computeProgressed(tp);
-    const transit=computeChart(new Date());
-    // static tri-wheel (no live counter on this chart) — snapshot at load
-    stopTriWheelLive();
-    drawTriWheel("tri-wheel",natalForTri,anglesForTri,prog,transit,null);
+    // cache the static inputs; the outer transit ring + its angles are (re)computed for the viewed moment.
+    // progressed angles use the progressed date at the birth place; transit angles use the saved "now" location.
+    _triN=natalForTri; _triNA=anglesForTri; _triP=prog;
+    _triPA=(tp.time&&tp.lat!=null)?computeAngles(progressedDate(tp),tp.lat,tp.lng):null;
+    _triLoc=(nowLoc&&nowLoc.lat!=null)?{lat:nowLoc.lat,lng:nowLoc.lng}:(tp.lat!=null?{lat:tp.lat,lng:tp.lng}:null);
+    triViewedMs=null;            // start live
+    paintTriWheel();
+    startTriClock();
     const pSun=signFromLon(prog.Sun),pMoon=signFromLon(prog.Moon),nSun=signFromLon(natalForTri.Sun);
     const pMerc=signFromLon(prog.Mercury),pVen=signFromLon(prog.Venus),pMars=signFromLon(prog.Mars);
     const birth=buildBirthDate(tp);const age=Math.floor((new Date()-birth)/(365.25*24*3600*1000));
@@ -2680,11 +2791,11 @@ function renderSynastry(idA,idB){
 /* ============ SHAREABLE CHART LINKS (no backend — data packed in URL) ============ */
 let pendingShared=null;
 function encodeProfile(p){
-  const slim={n:p.name||"",d:p.date,t:p.time||"",la:p.lat,lo:p.lng,tz:p.tz||"",to:p.tzOffset||0,pn:p.placeName||""};
+  const slim={n:p.name||"",d:p.date,t:p.time||"",la:p.lat,lo:p.lng,tz:p.tz||"",to:p.tzOffset||0,pn:p.placeName||"",dm:p.dstMode||"auto"};
   return btoa(encodeURIComponent(JSON.stringify(slim)));
 }
 function decodeProfile(code){
-  try{const s=JSON.parse(decodeURIComponent(atob(code)));return {name:s.n,date:s.d,time:s.t,lat:s.la,lng:s.lo,tz:s.tz,tzOffset:s.to,placeName:s.pn};}catch(e){return null;}
+  try{const s=JSON.parse(decodeURIComponent(atob(code)));return {name:s.n,date:s.d,time:s.t,lat:s.la,lng:s.lo,tz:s.tz,tzOffset:s.to,placeName:s.pn,dstMode:s.dm||"auto"};}catch(e){return null;}
 }
 function shareLink(p){const base=location.origin+location.pathname;return `${base}#chart=${encodeProfile(p)}`;}
 function checkSharedChart(){
@@ -2989,12 +3100,15 @@ $("i-place").addEventListener("input",e=>{const q=e.target.value.trim();$("place
 $("i-place").addEventListener("keydown",e=>{if($("ac").classList.contains("hide"))return;const cells=$("ac").querySelectorAll("div[data-i]");if(e.key==="ArrowDown"){e.preventDefault();acActive=Math.min(acItems.length-1,acActive+1);}else if(e.key==="ArrowUp"){e.preventDefault();acActive=Math.max(0,acActive-1);}else if(e.key==="Enter"){e.preventDefault();if(acActive>=0)pickPlace(acActive);return;}else return;cells.forEach((c,i)=>c.classList.toggle("active",i===acActive));});
 document.addEventListener("click",e=>{if(!e.target.closest("#i-place")&&!e.target.closest("#ac"))$("ac").classList.add("hide");});
 $("manual-toggle").addEventListener("click",()=>{$("manual-coords").classList.toggle("hide");});
+// keep the daylight/standard readout in sync as date, time or place change
+["i-month","i-day","i-year","i-hour","i-min","i-ampm"].forEach(id=>{const el=$(id);if(el)el.addEventListener("change",renderDstChoice);});
+$("dst-seg")&&$("dst-seg").querySelectorAll(".dst-opt").forEach(b=>b.addEventListener("click",()=>{chosenDstMode=b.dataset.dst;renderDstChoice();}));
 $("go").addEventListener("click",()=>{const name=$("i-name").value.trim(),date=getDateValue(),time=getTimeValue();const err=$("onboard-err");err.classList.add("hide");if(!date){err.textContent="A birth date is needed to cast the chart.";err.classList.remove("hide");return;}
   // manual coords override if filled
   const mlat=parseFloat($("i-lat").value),mlng=parseFloat($("i-lng").value);
   if(!chosenPlace && !isNaN(mlat) && !isNaN(mlng)){const off=Math.round(mlng/15);chosenPlace={name:$("i-place").value.trim()||"Custom location",region:"",lat:mlat,lng:mlng,tz:`UTC${off>=0?"+":""}${off} (est.)`,tzOffset:off};}
   if(!chosenPlace){err.textContent="Pick your birthplace from search, or enter coordinates manually.";err.classList.remove("hide");return;}
-  saveProfile({name,date,time,placeName:`${chosenPlace.name}${chosenPlace.region?", "+chosenPlace.region:""}`,lat:chosenPlace.lat,lng:chosenPlace.lng,tz:chosenPlace.tz,tzOffset:chosenPlace.tzOffset});showNatal();});
+  saveProfile({name,date,time,placeName:`${chosenPlace.name}${chosenPlace.region?", "+chosenPlace.region:""}`,lat:chosenPlace.lat,lng:chosenPlace.lng,tz:chosenPlace.tz,tzOffset:chosenPlace.tzOffset,dstMode:chosenDstMode});showNatal();});
 $("natal-edit").addEventListener("click",showOnboard);
 $("pcorner-dash").addEventListener("click",openProfileMenu);
 $("pcorner-natal").addEventListener("click",openProfileMenu);
@@ -3004,21 +3118,22 @@ $("pmenu-add").addEventListener("click",()=>{closeProfileMenu();startNewProfile(
 // time clock navigation
 function goDay(delta){goToDay(dayOffset+delta);}
 // "Now" resets to live; steppers nudge the frozen time by minutes
-var tn=$("time-now");if(tn)tn.addEventListener("click",refreshToNow);
-document.querySelectorAll(".time-step").forEach(b=>b.addEventListener("click",()=>{const m=parseInt(b.dataset.step,10);if(!isNaN(m))stepTime(m);}));
-// keyboard arrows step by a day; up/down step by an hour (desktop, Today view, not typing)
+// tri-chart time controls: "Now" snaps back to live; steppers nudge the viewed transit moment
+$("tri-now")&&$("tri-now").addEventListener("click",triNow);
+document.querySelectorAll("[data-tstep]").forEach(b=>b.addEventListener("click",()=>{const m=parseInt(b.dataset.tstep,10);if(!isNaN(m))triStep(m);}));
+// keyboard arrows step the tri-wheel transit ring when it's on screen (desktop, not while typing)
 document.addEventListener("keydown",e=>{
   const keys=["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"];
   if(!keys.includes(e.key))return;
-  const dashVisible=!$("dash").classList.contains("hide");
-  const onToday=!$("view-today").classList.contains("hide");
+  const sec=$("triwheel-section");
+  const triVisible=sec&&!sec.classList.contains("hide");
   const typing=/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement||{}).tagName||"");
-  if(!dashVisible||!onToday||typing)return;
+  if(!triVisible||typing)return;
   e.preventDefault();
-  if(e.key==="ArrowLeft")stepTime(-1440);
-  else if(e.key==="ArrowRight")stepTime(1440);
-  else if(e.key==="ArrowUp")stepTime(60);
-  else if(e.key==="ArrowDown")stepTime(-60);
+  if(e.key==="ArrowLeft")triStep(-1440);
+  else if(e.key==="ArrowRight")triStep(1440);
+  else if(e.key==="ArrowUp")triStep(60);
+  else if(e.key==="ArrowDown")triStep(-60);
 });
 $("journal-save").addEventListener("click",saveJournal);
 $("journal-export").addEventListener("click",exportJournalPDF);
