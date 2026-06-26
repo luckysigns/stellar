@@ -205,6 +205,26 @@
   .daycell .dot{width:4px;height:4px;border-radius:50%;background:var(--gold);opacity:.9}
   .daycell.lucky-3{background:rgba(232,201,122,.22);border-color:var(--gold)}
   .daycell.lucky-2{background:rgba(232,201,122,.11)}
+  .lucky-month{position:relative}
+  .lucky-month+.lucky-month,.lucky-month+.lucky-locked,.lucky-locked+.lucky-month,.lucky-locked+.lucky-locked{margin-top:14px}
+  .month-why{margin-top:4px}
+  .lucky-locked .lock-wrap{position:relative;margin-top:12px;min-height:188px}
+  .lock-frost{filter:blur(2.5px);opacity:.4;pointer-events:none}
+  .lock-grid{grid-template-columns:repeat(7,1fr)!important;gap:6px}
+  .lock-grid .lc{height:34px;border-radius:8px;background:rgba(232,201,122,.10)}
+  .lock-grid .lc.hi{background:rgba(232,201,122,.24)}
+  .lock-cta{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding:10px}
+  .lock-glyph{font-size:26px;opacity:.9}
+  .lock-t{font-size:16px;font-weight:600;color:var(--star)}
+  .lock-s{font-size:13px;color:var(--dim);line-height:1.5;max-width:300px;margin-bottom:8px}
+  .upgrade-btn{width:auto;padding:10px 24px}
+  .plan-card{border:1px solid var(--gold-soft);border-radius:14px;padding:14px;margin-bottom:12px;background:#10162a}
+  .plan-card.current{border-color:var(--teal)}
+  .plan-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .plan-name{font-size:16px;font-weight:600;color:var(--gold)}
+  .plan-price{font-size:12px;color:var(--teal);font-family:"SF Mono",monospace}
+  .plan-desc{font-size:13px;color:var(--dim);line-height:1.5;margin-bottom:12px}
+  .plan-pick{width:100%}
   .daycell.today{outline:1.5px solid var(--teal);outline-offset:-1px}
   .monthnote{font-size:13px;color:var(--dim);margin-top:14px;line-height:1.5}
   .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:10px;font-family:"SF Mono",monospace}
@@ -565,20 +585,16 @@
     </div>
 
     <div id="view-month" class="hide">
-      <div class="card"><div class="label" id="month-label">This month</div>
-        <div class="monthgrid" id="month-grid" style="margin-top:14px"></div>
-        <div class="legend">
-          <span><i class="sw" style="background:rgba(232,201,122,.22);border:1px solid var(--gold)"></i> peak day</span>
-          <span><i class="sw" style="background:rgba(232,201,122,.11)"></i> favorable</span>
-          <span><i class="sw" style="outline:1.5px solid var(--teal);background:transparent"></i> today</span>
-        </div>
-        <div class="monthnote" id="month-note"></div></div>
+      <div class="legend" style="margin:0 2px 14px">
+        <span><i class="sw" style="background:rgba(232,201,122,.22);border:1px solid var(--gold)"></i> peak day</span>
+        <span><i class="sw" style="background:rgba(232,201,122,.11)"></i> favorable</span>
+        <span><i class="sw" style="outline:1.5px solid var(--teal);background:transparent"></i> today</span>
+      </div>
+      <div id="lucky-months"></div>
       <div id="daypick" class="hide">
         <div class="between"><span class="label" id="daypick-title">Pick a day</span></div>
         <div class="card"><div id="daypick-body"></div></div>
       </div>
-      <div class="between"><span class="label">Best days & times this month</span></div>
-      <div class="card"><div id="month-why"></div></div>
       <div class="between"><span class="label">Journal this month</span></div>
       <div class="card">
         <p class="dim" style="font-size:13px;margin-bottom:10px">Days with a journal entry are marked. Tap one to jump to it.</p>
@@ -696,6 +712,12 @@
       <div class="pmenu-head"><span class="label">Your charts</span><button class="linkbtn" id="pmenu-close">close</button></div>
       <div id="pmenu-list"></div>
       <button class="btn ghost" id="pmenu-add" style="margin-top:12px">+ Add a chart</button>
+      <div id="pmenu-plan" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span style="font-size:13px;color:var(--dim)">Plan · <b id="pmenu-plan-name" style="color:var(--gold)">Free</b></span>
+          <button class="linkbtn" id="pmenu-upgrade" style="color:var(--teal)">manage</button>
+        </div>
+      </div>
       <div id="pmenu-account" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
           <span id="pmenu-email" style="font-size:13px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
@@ -704,6 +726,24 @@
         <button class="btn ghost" id="pmenu-sync" style="margin-top:12px">↻ Sync now</button>
         <div id="pmenu-sync-status" class="dim" style="font-size:12px;margin-top:8px;text-align:center"></div>
       </div>
+    </div>
+  </div>
+
+  <div id="upgrade-sheet" class="pmenu-overlay hide">
+    <div class="pmenu-sheet">
+      <div class="pmenu-head"><span class="label">Unlock more lucky days</span><button class="linkbtn" id="upgrade-close">close</button></div>
+      <p class="dim" style="font-size:13px;margin:2px 0 14px;line-height:1.5">Lucky-days look-ahead scales with your plan. Checkout is coming soon — for now you can preview each plan to see the gating.</p>
+      <div class="plan-card" id="plan-card-plus">
+        <div class="plan-top"><span class="plan-name">Plus</span><span class="plan-price">1 month ahead</span></div>
+        <div class="plan-desc">Your luckiest days a full month out, every favorable window scored against your chart.</div>
+        <button class="btn ghost plan-pick" data-plan="plus">Preview Plus</button>
+      </div>
+      <div class="plan-card" id="plan-card-premium">
+        <div class="plan-top"><span class="plan-name">Premium</span><span class="plan-price">3 months ahead</span></div>
+        <div class="plan-desc">Plan the big moves — launches, asks, first dates — three months out.</div>
+        <button class="btn plan-pick" data-plan="premium">Preview Premium</button>
+      </div>
+      <button class="linkbtn" id="plan-reset" style="margin-top:6px;color:var(--dim)">Reset to Free</button>
     </div>
   </div>
 </div>
@@ -940,6 +980,13 @@ function loadProfile(){
   if(profile)activeId=profile.id;
 }
 function persistProfiles(){try{localStorage.setItem("stellar.profiles",JSON.stringify(profiles));localStorage.setItem("stellar.activeId",activeId||"");}catch(e){} if(typeof syncPush==="function"){syncPush("stellar.profiles");syncPush("stellar.activeId");}}
+/* ---- subscription tier (entitlement scaffold; wire to Stripe/Supabase later) ---- */
+let stellarTier="free";
+const TIER_MONTHS={free:0,plus:1,premium:3};   // months of lucky-days look-ahead unlocked per plan
+function luckyMonthsUnlocked(){return TIER_MONTHS[stellarTier]||0;}
+function planLabel(t){t=t||stellarTier;return t==="premium"?"Premium":t==="plus"?"Plus":"Free";}
+function loadTier(){try{const t=localStorage.getItem("stellar.tier");if(t&&TIER_MONTHS[t]!=null)stellarTier=t;}catch(e){}}
+function saveTier(t){if(TIER_MONTHS[t]==null)return;stellarTier=t;try{localStorage.setItem("stellar.tier",t);}catch(e){} if(typeof syncPush==="function")syncPush("stellar.tier");}
 function saveProfile(p){
   // update existing active profile, or add a new one
   if(p.id&&profiles.some(x=>x.id===p.id)){profiles=profiles.map(x=>x.id===p.id?p:x);}
@@ -1694,6 +1741,7 @@ function openProfileMenu(){
     else{const onDash=$("dash")&&!$("dash").classList.contains("hide");if(!onDash)showNatal();}
   }));
   $("pmenu").classList.remove("hide");
+  updatePlanLabels();
 }
 function closeProfileMenu(){$("pmenu").classList.add("hide");}
 function showDash(){stopTriWheelLive();$("onboard").classList.add("hide");$("natal").classList.add("hide");$("dash").classList.remove("hide");monthRendered=false;viewedTimeMs=Date.now();renderDash();}
@@ -1907,50 +1955,99 @@ function luckyRowHtml(w){
 }
 
 function renderMonth(){
-  const now=new Date(),year=now.getFullYear(),mon=now.getMonth();
-  $("month-label").textContent=now.toLocaleDateString(undefined,{month:"long",year:"numeric"});
-  const first=new Date(year,mon,1),daysInMonth=new Date(year,mon+1,0).getDate(),startDow=first.getDay();
+  const host=$("lucky-months"); if(!host)return;
+  const now=new Date();
+  const year=now.getFullYear(),mon=now.getMonth();
+  const daysInMonth=new Date(year,mon+1,0).getDate(),startDow=new Date(year,mon,1).getDay();
+  if(!cachedAngles){
+    host.innerHTML=`<div class="card"><p class="dim" style="font-size:14px">Add a birth time to unlock lucky days — they're scored against your houses and angles.</p></div>`;
+    $("daypick")&&$("daypick").classList.add("hide");
+    renderJournalCalendar(year,mon,daysInMonth,startDow);
+    wireCollapsibles();
+    return;
+  }
+  const unlocked=luckyMonthsUnlocked();   // 0 / 1 / 3 months, by plan
+  let html="";
+  for(let i=0;i<3;i++){
+    const first=new Date(now.getFullYear(),now.getMonth()+i,1);
+    html+=(i<unlocked)?monthBlockHtml(first,i===0):lockedMonthHtml(first,i);
+  }
+  host.innerHTML=html;
+  wireMonthBlocks();
+  renderJournalCalendar(year,mon,daysInMonth,startDow);
+  wireCollapsibles();
+}
+function scoreMonth(year,mon){
+  const daysInMonth=new Date(year,mon+1,0).getDate(),startDow=new Date(year,mon,1).getDay();
   const dayScores=[];
   for(let d=1;d<=daysInMonth;d++){const noon=new Date(year,mon,d,12,0,0);const{score,hits}=mcLuckScore(cachedAngles,noon);dayScores.push({day:d,score,hits});}
   const scores=dayScores.map(x=>x.score),mean=scores.reduce((a,b)=>a+b,0)/scores.length;
   const sd=Math.sqrt(scores.reduce((a,b)=>a+(b-mean)**2,0)/scores.length)||1;
-  const tier=s=>{const z=(s-mean)/sd;if(z>1)return 3;if(z>0.4)return 2;return 1;};
+  const tierFn=s=>{const z=(s-mean)/sd;if(z>1)return 3;if(z>0.4)return 2;return 1;};
+  return {dayScores,tierFn,daysInMonth,startDow};
+}
+function monthBlockHtml(first,isCurrent){
+  const year=first.getFullYear(),mon=first.getMonth();
+  const {dayScores,tierFn,startDow}=scoreMonth(year,mon);
+  const now=new Date();const todayN=isCurrent?now.getDate():-1;
   let cells="";["S","M","T","W","T","F","S"].forEach(d=>cells+=`<div class="dow">${d}</div>`);
   for(let i=0;i<startDow;i++)cells+=`<div class="daycell empty"></div>`;
-  for(const ds of dayScores){const t=tier(ds.score);const isToday=ds.day===now.getDate();cells+=`<div class="daycell tappable ${t===3?'lucky-3':t===2?'lucky-2':''} ${isToday?'today':''}" data-day="${ds.day}"><span class="num">${ds.day}</span><span class="score">${"<span class='dot'></span>".repeat(t)}</span></div>`;}
-  $("month-grid").innerHTML=cells;
-  // tap any calendar day to reveal its lucky times in the detail panel
-  $("month-grid").querySelectorAll(".daycell.tappable").forEach(el=>{
-    el.addEventListener("click",()=>{
-      const day=+el.dataset.day;
-      $("month-grid").querySelectorAll(".daycell").forEach(c=>c.classList.remove("sel"));
-      el.classList.add("sel");
-      const wins=luckyWindowsForDay(new Date(year,mon,day,0,0,0),4);
-      const date=new Date(year,mon,day);
-      $("daypick-title").textContent=date.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
-      $("daypick-body").innerHTML=wins.length?wins.map(w=>luckyRowHtml(w)).join(""):`<div class="dim" style="font-size:14px">Even energy all day — no standout hour. Lead with your own timing.</div>`;
-      $("daypick").classList.remove("hide");
-      $("daypick").scrollIntoView({behavior:"smooth",block:"nearest"});
-    });
-  });
+  for(const ds of dayScores){const t=tierFn(ds.score);const isToday=ds.day===todayN;cells+=`<div class="daycell tappable ${t===3?'lucky-3':t===2?'lucky-2':''} ${isToday?'today':''}" data-year="${year}" data-mon="${mon}" data-day="${ds.day}"><span class="num">${ds.day}</span><span class="score">${"<span class='dot'></span>".repeat(t)}</span></div>`;}
   const best=[...dayScores].sort((a,b)=>b.score-a.score).slice(0,5).sort((a,b)=>a.day-b.day);
-  $("month-why").innerHTML=best.map(b=>{const date=new Date(year,mon,b.day);const gh=b.hits.filter(h=>h.aspect.luck>0).slice(0,2);const why=gh.length?gh.map(h=>`${h.transiting} ${h.aspect.name} natal ${h.natal==="MC"?"MC":h.natal}`).join(", "):"a calm, supportive sky";const flav=gh.length?aspectFlavor(gh[0]):"An easy day to make your own.";return `<div class="lucky lucky-day" data-day="${b.day}"><div class="win">${date.toLocaleDateString(undefined,{month:"short",day:"numeric"})}<small class="peak">tap for times ▾</small></div><div class="why">${flav}<small>${why}</small></div></div><div class="day-times hide" id="daytimes-${b.day}"></div>`;}).join("");
-  // wire expand-on-tap to show that day's best TIMES
-  $("month-why").querySelectorAll(".lucky-day").forEach(el=>{
-    el.addEventListener("click",()=>{
-      const day=+el.dataset.day;const box=$("daytimes-"+day);
-      if(!box.classList.contains("hide")){box.classList.add("hide");return;}
-      // compute that day's hourly windows on demand
-      const wins=luckyWindowsForDay(new Date(year,mon,day,0,0,0),4);
-      box.innerHTML=wins.length?wins.map(w=>luckyRowHtml(w)).join(""):`<div class="dim" style="font-size:13px;padding:8px 0">Even energy all day — no standout hour.</div>`;
-      box.classList.remove("hide");
-    });
-  });
+  const bestHtml=best.map(b=>{const date=new Date(year,mon,b.day);const gh=b.hits.filter(h=>h.aspect.luck>0).slice(0,2);const why=gh.length?gh.map(h=>`${h.transiting} ${h.aspect.name} natal ${h.natal==="MC"?"MC":h.natal}`).join(", "):"a calm, supportive sky";const flav=gh.length?aspectFlavor(gh[0]):"An easy day to make your own.";return `<div class="lucky lucky-day" data-year="${year}" data-mon="${mon}" data-day="${b.day}"><div class="win">${date.toLocaleDateString(undefined,{month:"short",day:"numeric"})}<small class="peak">tap for times \u25BE</small></div><div class="why">${flav}<small>${why}</small></div></div><div class="day-times hide" id="daytimes-${year}-${mon}-${b.day}"></div>`;}).join("");
   const peak=dayScores.reduce((a,b)=>b.score>a.score?b:a);
-  $("month-note").textContent=`Your strongest day this month looks like ${new Date(year,mon,peak.day).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})}. Shading shows how favorable each day's transits are to your chart, scored at midday.`;
-  renderJournalCalendar(year,mon,daysInMonth,startDow);
-  wireCollapsibles();
+  const label=first.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  const note=`Strongest day: ${new Date(year,mon,peak.day).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})}. Shading shows how favorable each day's transits are, scored at midday.`;
+  return `<div class="card lucky-month"><div class="label">${label}</div>
+    <div class="monthgrid" style="margin-top:14px">${cells}</div>
+    <div class="monthnote">${note}</div>
+    <div class="between"><span class="label">Best days &amp; times</span></div>
+    <div class="month-why">${bestHtml}</div></div>`;
 }
+function miniLockGrid(){let c="";const hi=new Set([3,8,12,15,19,23,27,31]);for(let i=0;i<35;i++)c+=`<div class="lc ${hi.has(i)?'hi':''}"></div>`;return c;}
+function lockedMonthHtml(first,idx){
+  const label=first.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  const needPlus=idx===0;const plan=needPlus?"Plus":"Premium";
+  const blurb=needPlus?"See your luckiest days a full month ahead, scored against your chart.":"Look three months ahead and time the big moves around your strongest days.";
+  return `<div class="card lucky-locked"><div class="label">${label}</div>
+    <div class="lock-wrap">
+      <div class="lock-frost"><div class="monthgrid lock-grid">${miniLockGrid()}</div></div>
+      <div class="lock-cta">
+        <div class="lock-glyph">\uD83D\uDD12</div>
+        <div class="lock-t">Unlock with ${plan}</div>
+        <div class="lock-s">${blurb}</div>
+        <button class="btn upgrade-btn" data-plan="${needPlus?"plus":"premium"}">Upgrade to ${plan}</button>
+      </div>
+    </div></div>`;
+}
+function wireMonthBlocks(){
+  const host=$("lucky-months"); if(!host)return;
+  host.querySelectorAll(".daycell.tappable").forEach(el=>el.addEventListener("click",()=>{
+    const day=+el.dataset.day,mon=+el.dataset.mon,year=+el.dataset.year;
+    host.querySelectorAll(".daycell").forEach(c=>c.classList.remove("sel"));
+    el.classList.add("sel");
+    const wins=luckyWindowsForDay(new Date(year,mon,day,0,0,0),4);
+    const date=new Date(year,mon,day);
+    $("daypick-title").textContent=date.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+    $("daypick-body").innerHTML=wins.length?wins.map(w=>luckyRowHtml(w)).join(""):`<div class="dim" style="font-size:14px">Even energy all day — no standout hour. Lead with your own timing.</div>`;
+    $("daypick").classList.remove("hide");
+    $("daypick").scrollIntoView({behavior:"smooth",block:"nearest"});
+  }));
+  host.querySelectorAll(".lucky-day").forEach(el=>el.addEventListener("click",()=>{
+    const day=+el.dataset.day,mon=+el.dataset.mon,year=+el.dataset.year;
+    const box=$(`daytimes-${year}-${mon}-${day}`); if(!box)return;
+    if(!box.classList.contains("hide")){box.classList.add("hide");return;}
+    const wins=luckyWindowsForDay(new Date(year,mon,day,0,0,0),4);
+    box.innerHTML=wins.length?wins.map(w=>luckyRowHtml(w)).join(""):`<div class="dim" style="font-size:13px;padding:8px 0">Even energy all day — no standout hour.</div>`;
+    box.classList.remove("hide");
+  }));
+  host.querySelectorAll(".upgrade-btn").forEach(el=>el.addEventListener("click",()=>openUpgrade(el.dataset.plan)));
+}
+function openUpgrade(focus){const s=$("upgrade-sheet");if(!s)return;s.classList.remove("hide");["plus","premium"].forEach(p=>{const c=$("plan-card-"+p);if(c)c.classList.toggle("current",stellarTier===p);});}
+function closeUpgrade(){$("upgrade-sheet")&&$("upgrade-sheet").classList.add("hide");}
+function setPlan(t){saveTier(t);updatePlanLabels();closeUpgrade();if($("view-month")&&!$("view-month").classList.contains("hide"))renderMonth();}
+function updatePlanLabels(){const n=$("pmenu-plan-name");if(n)n.textContent=planLabel();}
+
 function journalEntriesForMonth(year,mon,daysInMonth){
   const entries=[];
   for(let d=1;d<=daysInMonth;d++){
@@ -3115,6 +3212,11 @@ $("pcorner-natal").addEventListener("click",openProfileMenu);
 $("pmenu-close").addEventListener("click",closeProfileMenu);
 $("pmenu").addEventListener("click",e=>{if(e.target.id==="pmenu")closeProfileMenu();});
 $("pmenu-add").addEventListener("click",()=>{closeProfileMenu();startNewProfile();});
+$("pmenu-upgrade")&&$("pmenu-upgrade").addEventListener("click",()=>{closeProfileMenu();openUpgrade();});
+$("upgrade-close")&&$("upgrade-close").addEventListener("click",closeUpgrade);
+$("upgrade-sheet")&&$("upgrade-sheet").addEventListener("click",e=>{if(e.target.id==="upgrade-sheet")closeUpgrade();});
+$("plan-reset")&&$("plan-reset").addEventListener("click",()=>setPlan("free"));
+document.querySelectorAll(".plan-pick").forEach(b=>b.addEventListener("click",()=>setPlan(b.dataset.plan)));
 // time clock navigation
 function goDay(delta){goToDay(dayOffset+delta);}
 // "Now" resets to live; steppers nudge the frozen time by minutes
@@ -3245,7 +3347,7 @@ try{ sb=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ sb=null; }
    location, and every journal entry). UI-only keys like collapsed sections and
    the daily tarot-reveal flag stay local on purpose. */
 function isSyncKey(k){
-  return k==="stellar.profiles"||k==="stellar.activeId"||k==="stellar.nowloc"||k.indexOf("stellar.journal.")===0;
+  return k==="stellar.profiles"||k==="stellar.activeId"||k==="stellar.nowloc"||k==="stellar.tier"||k.indexOf("stellar.journal.")===0;
 }
 function allSyncKeysLocal(){
   const out=[];
@@ -3350,7 +3452,7 @@ function updateAccountRow(){
    sync just pulled (a chart added on another device, etc.) shows immediately. */
 function reapplyState(){
   const wasNatal=$("natal")&&!$("natal").classList.contains("hide");
-  loadProfile(); loadNowLoc();
+  loadProfile(); loadNowLoc(); loadTier();
   _cacheProfileId=null; monthRendered=false; acgGenerated=false; _acgBuiltForId=null;
   if(profile&&profile.date&&profile.lat!=null){
     if(wasNatal){ showNatal(); }
@@ -3388,7 +3490,7 @@ function bootApp(){
   $("auth")&&$("auth").classList.add("hide");
   const sd=$("sync-dot"); if(sd&&sb)sd.style.display="block";
   loadProfile();
-  populateDateTime(); loadNowLoc();
+  populateDateTime(); loadNowLoc(); loadTier();
   if(typeof checkSharedChart==="function" && checkSharedChart()){
     const inc=pendingShared;
     const ok=confirm(`Add ${inc.name||"this shared chart"} to your Stellar?`);
